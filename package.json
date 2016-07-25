@@ -1,0 +1,17 @@
+{
+  "scripts": {
+    "remove": "rm -rf node_modules"
+  },
+  "devDependencies": {
+    "babel": "latest",
+    "babel-loader": "latest",
+    "babel-plugin-transform-regenerator": "^6.9.0",
+    "babel-polyfill": "^6.9.1",
+    "babel-preset-es2015": "latest",
+    "file-loader": "latest",
+    "jquery": "latest",
+    "resolve-url": "latest",
+    "url-loader": "latest",
+    "webpack": "latest"
+  }
+}
