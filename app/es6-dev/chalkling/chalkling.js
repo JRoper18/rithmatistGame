@@ -8,7 +8,6 @@ export default class Chalkling{
     this.ID = id;
     this.Position = position;
     this.Attributes = attributeSet;
-    this.Animations = animationData;
     this.CurrentAction = "IDLE";
     this.Frame = 0;
     this.Sees = [];

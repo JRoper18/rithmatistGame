@@ -2,18 +2,16 @@ import * as coord from './coord.js';
 import Point from './point.js'
 import Rune from './rune.js';
 import Circle from './circle.js';
-import {Testling, EnemyTestling} from './chalklings/chalklings.js'
+import {Testling} from './chalklings/chalklings.js'
 import ChalklingCommand from './chalkling/chalklingCommand.js'
 export default class Board{
   constructor(element){
     this.Element = element;
-    this.Contains = [Testling, EnemyTestling, new Circle([new Point(100,0,1), new Point(170,39, 1), new Point(200, 100, 1), new Point(170, 170, 1), new Point(100, 200, 1), new Point(39, 170, 1), new Point(0, 100, 1), new Point(39, 39, 1), new Point(100,0,1)
+    this.Contains = [new Testling(1, "red", new Point(300, 0)), new Circle([new Point(100,0,1), new Point(170,39, 1), new Point(200, 100, 1), new Point(170, 170, 1), new Point(100, 200, 1), new Point(39, 170, 1), new Point(0, 100, 1), new Point(39, 39, 1), new Point(100,0,1)
     ])];
     this.Chalklings = this.getChalklings();
-    this.Contains[0].Position.X = 0;
     this.Contains[0].moveTo(new Point(0, 0))
     this.Contains[1].Position.X = 600;
-    this.Contains[2].Position = new Point(300, 300)
   }
   *getId(){
       let index = 3;
@@ -55,16 +53,15 @@ export default class Board{
         this.newCircle(circle);
         break;
       case "attack":
-        this.Contains.push(EnemyTestling);
+        this.Contains.push(new Testling(this.getId(), "blu", new Point(0, 300)));
       default:
 
     }
-    console.log(this.Contains);
   }
   getChalklings(){
     let chalklings = [];
     this.getBinded(function(rune){
-      if(rune.constructor.name == "Chalkling"){
+      if(rune.Name != null){
         chalklings.push(rune);
       }
     });

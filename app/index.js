@@ -14,7 +14,7 @@ window.onload = function(){
       $(b.Element).append(svgElements);
       i++;
     }, 30)
-  }, 3000)
+  }, 0)
 
 
 }
