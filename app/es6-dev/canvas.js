@@ -3,6 +3,7 @@ import {allRunes, getUserRunes} from './runeData.js'
 import Board from './board.js'
 import Rune from './rune.js'
 import Point from './point.js'
+import * as coord from './coord.js'
 
 export default class Canvas{
   constructor(board, runes){
@@ -14,6 +15,12 @@ export default class Canvas{
     let recognizer = new PDollarRecognizer();
     getUserRunes(recognizer, runes);
     let DOM = this.Board.Element;
+    $(document).on( "keydown", function(key){
+      if(key.which == 90){ //If "z" key held down
+        //Clear Points
+        self.CurrentRune.Points = [];
+      }
+    })
     $(DOM).on("mousedown", function(mouseDownEvent){
       $(DOM).on("mousemove", function(mouseMoveEvent){
         let parentOffset = $(DOM).offset();
@@ -22,6 +29,7 @@ export default class Canvas{
         let relY = mouseMoveEvent.pageY - parentOffset.top;
         //Add the new point data
         self.CurrentRune.Points.push(new Point(relX, relY, strokeId));
+
       });
     });
     $(DOM).on("mouseup", function(){
@@ -33,7 +41,6 @@ export default class Canvas{
         self.CurrentRune = new Rune([]);
       }
       strokeId++;
-      self.LastStroke = new Rune([]);
     });
   }
   render(){
