@@ -51,26 +51,30 @@ export default class Chalkling{
   }
   doCommand(command){
     let self = this;
-    if(this.checkQueue(command, this) != -1){ //Already doing that action
+    let promise = new Promise(function(resolve){
+      if(self.checkQueue(command, self) != -1){ //Already doing that action
 
-    }
-    else{
-      this.Queue.push(command);
-      let interval = setInterval(function(){
-        if(command.EndCondition(self)){
-          clearInterval(interval)
-          self.Queue.splice(self.checkQueue(command, self), 1)
-        }
-        else{
-          command.Action(self)
-        }
-      }, command.Time);
-    }
+      }
+      else{
+        self.Queue.push(command);
+        let interval = setInterval(function(){
+          if(command.EndCondition(self)){
+            clearInterval(interval)
+            self.Queue.splice(self.checkQueue(command, self), 1)
+            resolve();
+          }
+          else{
+            command.Action(self)
+          }
+        }, command.Time);
+      }
+    });
+    return promise;
   }
-
   moveTo(position){
     this.CurrentAction = "WALK";
-    this.doCommand(new ChalklingCommand(function(chalkling){
+    let self = this;
+    let promise = this.doCommand(new ChalklingCommand(function(chalkling){
       //yay, geometry! Here we go again....
       let me = chalkling.Position;
       let moveDistance = chalkling.Attributes.MovementSpeed/30;
@@ -94,9 +98,16 @@ export default class Chalkling{
           return false;
         }
     }));
+    return promise;
+  }
+  moveAlongPathRecusion(path, index){
+    let moveToPromise = this.moveTo(path[index]);
+    console.log(moveToPromise);
+    let self = this;
+    moveToPromise.then(function(){self.moveAlongPathRecusion(path, index+1)})
   }
   moveAlongPath(path){ //Path is array of points
-    
+    this.moveAlongPathRecusion(path, 0);
   }
   die(){
     this.CurrentAction = "DEATH";
