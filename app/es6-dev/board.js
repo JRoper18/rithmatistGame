@@ -7,6 +7,7 @@ import ChalklingCommand from './chalkling/chalklingCommand.js'
 export default class Board{
   constructor(element){
     this.Element = element;
+    this.Selected = [];
     this.Contains = [new Testling(1, "red", new Point(300, 0)), new Circle([new Point(100,0,1), new Point(170,39, 1), new Point(200, 100, 1), new Point(170, 170, 1), new Point(100, 200, 1), new Point(39, 170, 1), new Point(0, 100, 1), new Point(39, 39, 1), new Point(100,0,1)
     ])];
     this.Chalklings = this.getChalklings();
@@ -66,6 +67,11 @@ export default class Board{
       }
     });
     return chalklings;
+  }
+  moveChalklingAlongPath(path){
+    for(let i = 0; i<this.Selected.length; i++){
+      let currentSelected = this.Selected[i];
+    }
   }
   getBinded(callback = function(){}){ //depth-first search
     let binded = [];

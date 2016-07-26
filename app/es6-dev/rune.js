@@ -16,7 +16,7 @@ export default class Rune{ //A Rune is a non-animated (static) set of points
     }
     this.Points = coord.TranslateTo(resizedPoints, coord.Centroid(this.Points));
   }
-  render(){
+  render(mode = "DRAW"){
     let currentStroke = -1;
     let svgPathString = '';
     for(let i = 0; i<this.Points.length; i++){
@@ -28,6 +28,16 @@ export default class Rune{ //A Rune is a non-animated (static) set of points
         svgPathString += ("L" + this.Points[i].X + " " + this.Points[i].Y);
       }
     }
-    return '<path stroke="black" fill="none" stroke-width = "1" d="' + svgPathString + '"></path>'
+    switch(mode){
+      case "DRAW":
+        return '<path stroke="black" fill="none" stroke-width = "1" d="' + svgPathString + '"></path>'
+        break;
+      case "PATH":
+        return '<path stroke="black" stroke-dasharray= "5,5" fill="none" stroke-width = "1" d="' + svgPathString + '"></path>'
+        break;
+      default:
+        return '<path stroke="black" fill="none" stroke-width = "1" d="' + svgPathString + '"></path>'
+
+    }
   }
 }

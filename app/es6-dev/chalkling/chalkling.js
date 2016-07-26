@@ -95,6 +95,9 @@ export default class Chalkling{
         }
     }));
   }
+  moveAlongPath(path){ //Path is array of points
+    
+  }
   die(){
     this.CurrentAction = "DEATH";
     console.log("A " + this.Player + " " + this.Name + " has died!");
@@ -154,8 +157,6 @@ export default class Chalkling{
         this.moveTo(this.Target.Position);
       }
     }
-
-
   }
   render(){
     this.update();
