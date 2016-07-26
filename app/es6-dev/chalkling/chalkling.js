@@ -102,9 +102,11 @@ export default class Chalkling{
   }
   moveAlongPathRecusion(path, index){
     let moveToPromise = this.moveTo(path[index]);
-    console.log(moveToPromise);
     let self = this;
-    moveToPromise.then(function(){self.moveAlongPathRecusion(path, index+1)})
+    if(index != path.length-1){ //We still have more points to goto
+      moveToPromise.then(function(){self.moveAlongPathRecusion(path, index+1)})
+    }
+    else{}
   }
   moveAlongPath(path){ //Path is array of points
     this.moveAlongPathRecusion(path, 0);

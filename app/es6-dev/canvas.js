@@ -57,6 +57,8 @@ export default class Canvas{
       }
       else if(self.Mode == "PATH"){
         self.Board.moveChalklingAlongPath(self.CurrentRune.Points);
+        self.CurrentRune = new Rune([])
+
       }
     });
   }
