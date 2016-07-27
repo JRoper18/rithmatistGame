@@ -9,7 +9,7 @@ export default class Board{
     this.Element = element;
     this.Contains = [new Testling(1, "red", new Point(300, 0)), new Circle([new Point(100,0,1), new Point(170,39, 1), new Point(200, 100, 1), new Point(170, 170, 1), new Point(100, 200, 1), new Point(39, 170, 1), new Point(0, 100, 1), new Point(39, 39, 1), new Point(100,0,1)
     ])];
-    this.Selected = [this.Contains[0]];
+    this.Selected = [];
 
     this.Chalklings = this.getChalklings();
     this.Contains[0].moveTo(new Point(0, 0))
@@ -70,9 +70,11 @@ export default class Board{
     return chalklings;
   }
   moveChalklingAlongPath(path){
-    for(let i = 0; i<this.Selected.length; i++){
-      let currentSelected = this.Selected[i];
-      currentSelected.moveAlongPath(path);
+    if(this.Selected.length != 0){
+      for(let i = 0; i<this.Selected.length; i++){
+        let currentSelected = this.Selected[i];
+        currentSelected.moveAlongPath(path);
+      }
     }
   }
   getBinded(callback = function(){}){ //depth-first search
@@ -194,6 +196,20 @@ export default class Board{
         }
       }
     }
+  }
+  selectChalklingAtPoint(point){
+    let V = SAT.Vector;
+    let B = SAT.Box;
+    let vecPoint = new V(point.X, point.Y);
+    let chalkling = [];
+    this.getBinded(function(rune){
+      if(rune.Name != null){
+        if(SAT.pointInPolygon(vecPoint, new B(new V(rune.Position.X, rune.Position.Y), 100, 100).toPolygon())){
+          chalkling = rune;
+        }
+      }
+    })
+    return chalkling;
   }
   updateChalklingTargetPositions(){
     let chalklings = this.Chalklings;

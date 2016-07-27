@@ -9,7 +9,7 @@ export default class Canvas{
   constructor(board, runes){
     this.Board = board;
     this.Runes = runes;
-    this.Mode = "PATH";
+    this.Mode = "COMMAND";
     this.CurrentRune = new Rune([]);
     this.enable();
   }
@@ -18,6 +18,7 @@ export default class Canvas{
     $(this.Board.Element).unbind();
   }
   changeMode(mode){
+    this.CurrentRune = new Rune([])
     this.Mode = mode;
     this.disable();
     this.enable();
@@ -33,8 +34,20 @@ export default class Canvas{
         //Clear Points
         self.CurrentRune.Points = [];
       }
+      else if(key.which == 49){ //"1" key
+        //Set to draw mode
+        self.changeMode("DRAW");
+      }
+      else if(key.which == 50){ //"2" key
+        //Set to path mode
+        self.changeMode("COMMAND");
+      }
     })
     $(DOM).on("mousedown", function(mouseDownEvent){
+      if(self.Mode == "COMMAND"){
+        let newSelected = self.Board.selectChalklingAtPoint(new Point(mouseDownEvent.pageX, mouseDownEvent.pageY));
+        self.Board.Selected = [newSelected];
+      }
       $(DOM).on("mousemove", function(mouseMoveEvent){
         let parentOffset = $(DOM).offset();
         //Offset allows for containers that don't fit thte entire page and work inside the surface.
@@ -55,7 +68,7 @@ export default class Canvas{
         }
         strokeId++;
       }
-      else if(self.Mode == "PATH"){
+      else if(self.Mode == "COMMAND"){
         self.Board.moveChalklingAlongPath(self.CurrentRune.Points);
         self.CurrentRune = new Rune([])
 
@@ -68,7 +81,7 @@ export default class Canvas{
       case "DRAW":
         path = this.CurrentRune.render();
         break;
-      case "PATH":
+      case "COMMAND":
         path = this.CurrentRune.render("PATH");
         break;
       default:

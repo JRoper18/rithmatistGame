@@ -14,6 +14,7 @@ export default class Chalkling{
     this.AnimationEnd = -1;
     this.Queue = [];
     this.Target = null;
+    this.Path = []
   }
   getAnimation(){ //Example path: ./chalklings/Testling/Animations/Idle/X
     let pathToAnimation = '';
@@ -51,23 +52,18 @@ export default class Chalkling{
   }
   doCommand(command){
     let self = this;
-    let promise = new Promise(function(resolve){
-      if(self.checkQueue(command, self) != -1){ //Already doing that action
-
-      }
-      else{
-        self.Queue.push(command);
-        let interval = setInterval(function(){
-          if(command.EndCondition(self)){
-            clearInterval(interval)
-            self.Queue.splice(self.checkQueue(command, self), 1)
-            resolve();
-          }
-          else{
-            command.Action(self)
-          }
-        }, command.Time);
-      }
+    let promise = new Promise(function(resolve, reject){
+      self.Queue.push(command);
+      let interval = setInterval(function(){
+        if(command.EndCondition(self)){
+          clearInterval(interval)
+          self.Queue.splice(self.checkQueue(command, self), 1)
+          resolve();
+        }
+        else{
+          command.Action(self)
+        }
+      }, command.Time);
     });
     return promise;
   }
@@ -97,19 +93,22 @@ export default class Chalkling{
         else{
           return false;
         }
-    }));
+    }), true);
     return promise;
   }
-  moveAlongPathRecusion(path, index){
+  moveAlongPath(path, index = 0){  //Path is array of points
+    this.override();
     let moveToPromise = this.moveTo(path[index]);
     let self = this;
     if(index != path.length-1){ //We still have more points to goto
-      moveToPromise.then(function(){self.moveAlongPathRecusion(path, index+1)})
+      moveToPromise.then(function(){self.moveAlongPath(path, index+1)})
     }
     else{}
   }
-  moveAlongPath(path){ //Path is array of points
-    this.moveAlongPathRecusion(path, 0);
+  override(){
+    for(let i = 0; i<this.Queue.length; i++){
+      this.Queue[i].override();
+    }
   }
   die(){
     this.CurrentAction = "DEATH";

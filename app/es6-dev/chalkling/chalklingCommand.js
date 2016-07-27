@@ -8,4 +8,12 @@ export default class ChalklingCommand{
     this.Time = time;
     this.EndCondition = endCondition;
   }
+  override(){
+    this.EndCondition = function(){
+      return true
+    }
+    this.Action = function(){
+      return;
+    }
+  }
 }
