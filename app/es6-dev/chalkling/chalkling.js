@@ -50,20 +50,25 @@ export default class Chalkling{
     }
     return -1;
   }
-  doCommand(command){
+  doCommand(command, override = false){
     let self = this;
     let promise = new Promise(function(resolve, reject){
-      self.Queue.push(command);
-      let interval = setInterval(function(){
-        if(command.EndCondition(self)){
-          clearInterval(interval)
-          self.Queue.splice(self.checkQueue(command, self), 1)
-          resolve();
-        }
-        else{
-          command.Action(self)
-        }
-      }, command.Time);
+      if(!override && self.checkQueue(command, self) != -1){
+        console.log("Duplicate action with override disabled");
+      }
+      else{
+        self.Queue.push(command);
+        let interval = setInterval(function(){
+          if(command.EndCondition(self)){
+            clearInterval(interval)
+            self.Queue.splice(self.checkQueue(command, self), 1)
+            resolve();
+          }
+          else{
+            command.Action(self)
+          }
+        }, command.Time);
+      }
     });
     return promise;
   }
