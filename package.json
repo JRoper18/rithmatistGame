@@ -1,6 +1,7 @@
 {
   "scripts": {
-    "remove": "rm -rf node_modules"
+    "remove": "rm -rf node_modules",
+    "dev-server": "webpack-dev-server"
   },
   "devDependencies": {
     "babel": "latest",

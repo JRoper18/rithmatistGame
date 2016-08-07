@@ -70,7 +70,7 @@ export default class Board{
     return chalklings;
   }
   moveChalklingAlongPath(path){
-    if(this.Selected.length != 0){
+    if(this.Selected[0] != null){
       for(let i = 0; i<this.Selected.length; i++){
         let currentSelected = this.Selected[i];
         currentSelected.moveAlongPath(path);
@@ -201,7 +201,7 @@ export default class Board{
     let V = SAT.Vector;
     let B = SAT.Box;
     let vecPoint = new V(point.X, point.Y);
-    let chalkling = [];
+    let chalkling = null;
     this.getBinded(function(rune){
       if(rune.Name != null){
         if(SAT.pointInPolygon(vecPoint, new B(new V(rune.Position.X, rune.Position.Y), 100, 100).toPolygon())){
