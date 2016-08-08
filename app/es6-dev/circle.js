@@ -18,7 +18,7 @@ export default class Circle extends Rune{
     let avgDistance = distances/this.Points.length;
     return avgDistance;
   }
-  getBinded(object){ //depth-first search to find all objects of type object
+  getBinded(object = "Circle"){ //depth-first search to find all objects of type object
     let binded = [];
     this.getBindedIncursion(this, object, binded);
     return binded;
@@ -28,12 +28,15 @@ export default class Circle extends Rune{
       for(let i = 0; i<circle.HasBinded.length; i++){
         if(typeof object == "undefined" || circle.HasBinded[i].constructor.name == object || circle.HasBinded[i].constructor.name == "Circle"){
           binded.push(circle.HasBinded[i]);
-          this.getBindedIncursion(circle.HasBinded[i]);
+          this.getBindedIncursion(circle.HasBinded[i], object, binded);
         }
         else{
 
         }
       }
+    }
+    else{
+      binded.push(circle);
     }
   }
   bindRune(rune){
