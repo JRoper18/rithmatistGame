@@ -62,7 +62,17 @@ import Point from './point.js'
 //
 // Point class
 //
+function movePointAlongLine(pt1, pt2, distanceToMove){
+	let dx = pt2.X - pt1.X;
+	let dy = pt2.Y - pt1.Y;
+	let distance = Distance(pt1, pt2);
+	let unitX = dx/distance;
+	let unitY = dy/distance;
+	let newX = (unitX * distanceToMove) + pt1.X;
+	let newY = (unitY * distanceToMove) + pt1.Y;
+	return new Point(newX, newY);
 
+}
 function GreedyCloudMatch(points, P)
 {
 	let e = 0.50;
@@ -193,4 +203,4 @@ function Distance(p1, p2) // Euclidean distance between two points
 	return Math.sqrt(dx * dx + dy * dy);
 }
 
-export {Distance, PathLength, PathDistance, Centroid, GreedyCloudMatch, TranslateTo, Scale, Resample, CloudDistance};
+export {Distance, PathLength, PathDistance, Centroid, GreedyCloudMatch, TranslateTo, Scale, Resample, CloudDistance, movePointAlongLine};

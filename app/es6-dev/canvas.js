@@ -62,8 +62,8 @@ export default class Canvas{
       if(self.Mode == "DRAW"){
         let recognizedResult = recognizer.Recognize(self.CurrentRune.Points);
         //WARNING Recognize adds 99-98 more randon points to a point array, which is why I made a clone of of the points and then recognized the clone.
-        if(recognizedResult.Score > 0.5){ //If they just drew something
-          self.Board.newRune(recognizedResult.Name, self.CurrentRune.Points);
+        if(recognizedResult.Score > 0.1){ //If they just drew something
+          self.Board.newRune(recognizedResult.Name, self.CurrentRune.Points, "blu");
           self.CurrentRune = new Rune([]);
         }
         strokeId++;

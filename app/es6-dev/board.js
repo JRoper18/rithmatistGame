@@ -8,12 +8,12 @@ export default class Board{
   constructor(element){
     this.Element = element;
     this.Contains = [new Testling(1, "red", new Point(300, 0)), new Circle([new Point(100,0,1), new Point(170,39, 1), new Point(200, 100, 1), new Point(170, 170, 1), new Point(100, 200, 1), new Point(39, 170, 1), new Point(0, 100, 1), new Point(39, 39, 1), new Point(100,0,1)
-    ])];
+    ], 2)];
     this.Selected = [];
-
     this.Chalklings = this.getChalklings();
     this.Contains[0].moveTo(new Point(0, 0))
     this.Contains[1].Position.X = 600;
+    this.IDGenerator = this.getId();
   }
   *getId(){
       let index = 3;
@@ -23,39 +23,41 @@ export default class Board{
   }
   newCircle(circle){
     let allCircles = [];
-    for(let i = 0; i<this.Contains.length; i++){
-      if(this.Contains[i].constructor.name == "Circle"){
-        let tempCircles = this.getBinded(function(){}, this.Contains[i]);
-        allCircles = allCircles.concat(tempCircles, this.Contains[i]);
+    this.getBinded(function(rune){
+      if(rune.constructor.name == "Circle"){
+        allCircles.push(rune)
       }
-    }
+    })
     let mostLikelyCircle;
     let mostLikelyCircleError = Infinity;
     for(let i = 0; i<allCircles.length; i++){
       let tempCircle = allCircles[i];
-      let currentDistance = coord.Distance(tempCircle, new Point(circle.X, circle.Y));
+      let currentDistance = coord.Distance(tempCircle.Position, circle.Position);
       let tempCircleError = currentDistance - (circle.Radius + tempCircle.Radius); //Measures to see how close the new circle is to touching the outside of the current one.
       if(tempCircleError < mostLikelyCircleError){                      //The ideal error is 0 (they are perfectly tangent circles)
         mostLikelyCircleError = tempCircleError;
         mostLikelyCircle = tempCircle;
       }
     }
-    if(mostLikelyCircleError > 200){ //If the error is too high (>200 pixels);
+    if(mostLikelyCircleError > 50){ //If the error is too high (>200 pixels);
       //Don't bind it, just make it unbinded.
       this.Contains.push(circle);
     }
     else{ //It's probably binded to the mostLikelyCircle
+      let currentToBinded = coord.Distance(circle.Position, mostLikelyCircle.Position);
+      let error = currentToBinded - circle.Radius - mostLikelyCircle.Radius;
+      circle.Position = coord.movePointAlongLine(circle.Position, mostLikelyCircle.Position, error);
       mostLikelyCircle.bindRune(circle)
     }
   }
-  newRune(name, points){
+  newRune(name, points, team){
     switch(name){
       case "circle":
-        let circle = new Circle(points);
+        let circle = new Circle(points, this.IDGenerator.next());
         this.newCircle(circle);
         break;
       case "attack":
-        this.Contains.push(new Testling(this.getId(), "blu", new Point(0, 300)));
+        this.Contains.push(new Testling(this.IDGenerator.next(), team, new Point(coord.Centroid(points).X, coord.Centroid(points).Y)));
       default:
 
     }
@@ -70,7 +72,8 @@ export default class Board{
     return chalklings;
   }
   moveChalklingAlongPath(path){
-    if(this.Selected.length != 0){
+    console.log("EYYY");
+    if(this.Selected[0] != null){
       for(let i = 0; i<this.Selected.length; i++){
         let currentSelected = this.Selected[i];
         currentSelected.moveAlongPath(path);
@@ -85,13 +88,15 @@ export default class Board{
     return binded;
   }
   getBindedIncursion(rune, binded, callback){
-    if(rune.HasBinded != null){ //has binded stuff, find it recursively
+    if(typeof rune.HasBinded != "undefined"){ //has binded stuff, find it recursively
       for(let i = 0; i<rune.HasBinded.length; i++){
-        this.getBindedIncursion(rune.HasBinded[i]);
+        this.getBindedIncursion(rune.HasBinded[i], binded, callback);
         binded.push(rune.HasBinded[i]);
       }
     }
-    binded.push(rune);
+    else{
+      binded.push(rune)
+    }
     callback(rune);
   }
   removeDeadChalklings(){
@@ -133,17 +138,7 @@ export default class Board{
         let y2 = entity2.Position.Y;
         if(entity1.constructor.name == "Circle" || entity2.constructor.name == "Circle"){ //One's a circle
           if(entity1.constructor.name == "Circle" && entity2.constructor.name == "Circle"){ //Both circles
-            SAT.testCircleCircle(new C(new V(x1, y1), entity1.Radius), new C(new V(x2, y2), entity2.Radius), response);
-            let smallerCircle = ((entity1.Radius>= entity2.Radius)? entity2: entity1); //Determines smaller circle
-            this.getBinded(function(rune){ //Finds the smaller circle, removes it.
-              if(rune.HasBinded != null){
-                for(let k = 0; i<rune.HasBinded.length;k++){
-                  if(rune.HasBinded[k].ID == smallerCircle.ID){
-                    rune.HasBinded.splice(k, 1);
-                  }
-                }
-              }
-            });
+
           }
           else if(entity1.Name != null){ //1 is chalkling, 2 is circle
             if(SAT.testPolygonCircle(new B(new V(x1,y1), 100, 100).toPolygon(), new C(new V(x2, y2), entity2.Radius), response)){
@@ -179,7 +174,7 @@ export default class Board{
           let secondChalklingBox = new B(new V(x2,y2), 100, 100).toPolygon();
           let collided = SAT.testPolygonPolygon(firstChalklingBox, secondChalklingBox, response);
           if(collided){
-            let collidedVector = response.overlapV.scale(0.5); //How much they overlap
+            let collidedVector = response.overlapV.scale(0.6); //How much they overlap
             this.getBinded(function(rune){
               if(entity1.ID == rune.ID){
                 rune.Position.X -=collidedVector.x;
@@ -192,6 +187,12 @@ export default class Board{
                 rune.Position.Y +=collidedVector.y;
               }
             });
+            if(entity1.Player != entity2.Player){ //Shit! We just bumped into an enemy. Drop everything and KILL THEM
+              entity1.Target = entity2;
+              entity1.override();
+              entity2.Target = entity1;
+              entity2.override();
+            }
           }
         }
       }
@@ -201,7 +202,7 @@ export default class Board{
     let V = SAT.Vector;
     let B = SAT.Box;
     let vecPoint = new V(point.X, point.Y);
-    let chalkling = [];
+    let chalkling = null;
     this.getBinded(function(rune){
       if(rune.Name != null){
         if(SAT.pointInPolygon(vecPoint, new B(new V(rune.Position.X, rune.Position.Y), 100, 100).toPolygon())){
@@ -230,16 +231,10 @@ export default class Board{
     this.removeDeadChalklings();
     this.updateHitboxes();
     this.updateChalklingView();
-    let renderString = '';
-    for(let i = 0; i<this.Contains.length;i++){
-      if(this.Contains[i].constructor.name == "Circle"){
-        var binded = this.getBinded(function(){}, this.Contains[i]);
-        for(let j = 0; j<binded.length;j++){
-          renderString += (binded[j].render());
-        }
-      }
-      renderString += (this.Contains[i].render());
-    }
+    let renderString = '' ;
+    this.getBinded(function(rune){
+      renderString += rune.render();
+    })
     return renderString;
   }
 }

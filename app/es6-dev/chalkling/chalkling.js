@@ -54,7 +54,7 @@ export default class Chalkling{
     let self = this;
     let promise = new Promise(function(resolve, reject){
       if(!override && self.checkQueue(command, self) != -1){
-        console.log("Duplicate action with override disabled");
+
       }
       else{
         self.Queue.push(command);
@@ -74,22 +74,10 @@ export default class Chalkling{
   }
   moveTo(position){
     this.CurrentAction = "WALK";
+    this.Target = null;
     let self = this;
     let promise = this.doCommand(new ChalklingCommand(function(chalkling){
-      //yay, geometry! Here we go again....
-      let me = chalkling.Position;
-      let moveDistance = chalkling.Attributes.MovementSpeed/30;
-      let dx = position.X - me.X;
-      let dy = position.Y - me.Y;
-      let distance = coord.Distance(me, position);
-      let unitX = dx/distance;
-      let unitY = dy/distance;
-      let newX = (unitX * moveDistance);
-      let newY = (unitY * moveDistance);
-      chalkling.Position.Y += newY;
-      chalkling.Position.X += newX;
-      //I know thats a lot of unneccesary variables but showing it all makes it more understandable.
-      //http://stackoverflow.com/questions/12550365/calculate-a-point-along-the-line-a-b-at-a-given-distance-from-a
+      chalkling.Position = coord.movePointAlongLine(chalkling.Position, position, chalkling.Attributes.MovementSpeed/30)
     }, 33, function(chalkling){
         if(coord.Distance(chalkling.Position, position)<10 || chalkling.CurrentAction != "WALK"){
           chalkling.CurrentAction = "IDLE";
@@ -156,7 +144,7 @@ export default class Chalkling{
         this.CurrentAction = "IDLE";
       }
       let self = this;
-      if(coord.Distance(this.Target.Position, this.Position)<=this.Attributes.AttackRange){ //6. Should I move to follow my target?
+      if(coord.Distance(this.Target.Position, this.Position) <= this.Attributes.AttackRange){ //6. Should I move to follow my target?
         this.CurrentAction = "ATTACK";
         this.doCommand(new ChalklingCommand(function(chalkling){
           chalkling.Target.Attributes.Health -= chalkling.Attributes.Attack;
@@ -177,10 +165,10 @@ export default class Chalkling{
   }
   render(){
     this.update();
-    let chalklingImage = "<image xlink:href=\""  + this.getAnimation() + "\" x=\"" + this.Position.X + "\" y=\"" + this.Position.Y + "\" height=\"100\" width=\"100\" />"
-    let healthBarOutside = '<rect x="' + this.Position.X.toString() + '" y="' + (this.Position.Y+110).toString() + '" width="100" height="5" fill="green"/>';
+    let chalklingImage = "<image xlink:href=\""  + this.getAnimation() + "\" x=\"" + (this.Position.X).toString()+ "\" y=\"" + (this.Position.Y).toString() + "\" height=\"100\" width=\"100\" />"
+    let healthBarOutside = '<rect x="' + (this.Position.X).toString() + '" y="' + (this.Position.Y+110).toString() + '" width="100" height="5" fill="green"/>';
     let healthRatio = (((this.Attributes.MaxHealth-this.Attributes.Health)/this.Attributes.MaxHealth)*100);
-    let healthBarLeft = '<rect x="' + (this.Position.X + (100-healthRatio)).toString() + '" y="' + (this.Position.Y+110).toString() + '" width="' + healthRatio.toString() +  '" height="5" fill="red"/>';
+    let healthBarLeft = '<rect x="' + ((this.Position.X) + (100-healthRatio)).toString() + '" y="' + (this.Position.Y+110).toString() + '" width="' + healthRatio.toString() +  '" height="5" fill="red"/>';
     return chalklingImage + healthBarOutside + healthBarLeft;
   }
 }
