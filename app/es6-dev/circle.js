@@ -35,11 +35,13 @@ export default class Circle extends Rune {
 				if (typeof object == "undefined" || circle.HasBinded[i].constructor.name == object || circle.HasBinded[i].constructor.name == "Circle") {
 					binded.push(circle.HasBinded[i]);
 					this.getBindedIncursion(circle.HasBinded[i], object, binded);
-				} else {
+				}
+				else {
 
 				}
 			}
-		} else {
+		}
+		else {
 			binded.push(circle);
 		}
 	}
@@ -59,7 +61,7 @@ export default class Circle extends Rune {
 		let r = radius.toString();
 		//perfectCircle is the perfect circle shown for clarity
 		//Circle formula for paths found here: http://stackoverflow.com/questions/5737975/circle-drawing-with-svgs-arc-path/10477334#10477334
-			let perfectCircle = "<path fill='none' stroke='#af9e9e' strokewidth=3 d='M" + this.Position.X + " " + this.Position.Y + "m" + (-1 * radius).toString() + " 0a" + r + "," + r + " 0 1,0 " + (radius * 2).toString() + ",0" + "a " + r + "," + r + " 0 1,0 " + (radius * -2).toString() + ",0" + "'></path>"
+		let perfectCircle = "<path fill='none' stroke='#af9e9e' strokewidth=3 d='M" + this.Position.X + " " + this.Position.Y + "m" + (-1 * radius).toString() + " 0a" + r + "," + r + " 0 1,0 " + (radius * 2).toString() + ",0" + "a " + r + "," + r + " 0 1,0 " + (radius * -2).toString() + ",0" + "'></path>"
 		let realCircle = new Rune(this.Points).render()
 		return perfectCircle + realCircle;
 	}

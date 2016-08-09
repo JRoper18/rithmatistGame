@@ -12,7 +12,7 @@ export default class Board{
     this.Selected = [];
     this.Chalklings = this.getChalklings();
     this.Contains[0].moveTo(new Point(0, 0))
-    this.Contains[1].Position.X = 600;
+    this.Contains[1].moveTo(new Point(600, 0));
     this.IDGenerator = this.getId();
   }
   *getId(){
@@ -46,7 +46,7 @@ export default class Board{
     else{ //It's probably binded to the mostLikelyCircle
       let currentToBinded = coord.Distance(circle.Position, mostLikelyCircle.Position);
       let error = currentToBinded - circle.Radius - mostLikelyCircle.Radius;
-      circle.Position = coord.movePointAlongLine(circle.Position, mostLikelyCircle.Position, error);
+      circle.moveTo(coord.movePointAlongLine(circle.Position, mostLikelyCircle.Position, error));
       mostLikelyCircle.bindRune(circle)
     }
   }
@@ -72,7 +72,6 @@ export default class Board{
     return chalklings;
   }
   moveChalklingAlongPath(path){
-    console.log("EYYY");
     if(this.Selected[0] != null){
       for(let i = 0; i<this.Selected.length; i++){
         let currentSelected = this.Selected[i];
@@ -90,9 +89,10 @@ export default class Board{
   getBindedIncursion(rune, binded, callback){
     if(typeof rune.HasBinded != "undefined"){ //has binded stuff, find it recursively
       for(let i = 0; i<rune.HasBinded.length; i++){
+        console.log(rune.HasBinded.length)
         this.getBindedIncursion(rune.HasBinded[i], binded, callback);
-        binded.push(rune.HasBinded[i]);
       }
+      binded.push(rune)
     }
     else{
       binded.push(rune)
@@ -119,14 +119,14 @@ export default class Board{
     }
   }
   updateHitboxes(){
-    let runes = this.getBinded();
+    let runes = this.getBinded()
     let P = SAT.Polygon; //Shortening for easier typing
     let C = SAT.Circle;
     let V = SAT.Vector;
     let B = SAT.Box;
     for(let i = 0; i<runes.length;i++){
       for(let j = 0; j<runes.length; j++){
-        if(i == j){ //Don't want to compare to outselves.
+        if(i == j){ //Don't want to compare to ourselves.
           continue;
         }
         let response = new SAT.Response();
@@ -142,22 +142,18 @@ export default class Board{
           }
           else if(entity1.Name != null){ //1 is chalkling, 2 is circle
             if(SAT.testPolygonCircle(new B(new V(x1,y1), 100, 100).toPolygon(), new C(new V(x2, y2), entity2.Radius), response)){
-              this.getBinded(function(rune){
-                if(rune.ID == entity1.ID){
-                  rune.Position.X -= (response.overlapV.x)
-                  rune.Position.Y -= (response.overlapV.y)
-                }
-              });
+              entity1.Position.X -= response.overlapV.x
+              entity1.Position.Y -= response.overlapV.y
+              //Stop the chalkling from walking, so it doesn't get stuck there.
+              entity1.override();
             }
           }
           else if(entity2.Name != null){ //2 is chalkling, 1 is circle
             if(SAT.testPolygonCircle(new B(new V(x2, y2), 100, 100).toPolygon(), new C(new V(x1, y1), entity1.Radius), response)){
-              this.getBinded(function(rune){
-                if(rune.ID == entity2.ID){
-                  rune.Position.X -=(response.overlapV.x)
-                  rune.Position.Y -=(response.overlapV.y)
-                }
-              })
+              let moveToPoint = new Point(response.overlapV.x, response.overlapV.y)
+              entity2.Position.X -= response.overlapV.x
+              entity2.Position.Y -= response.overlapV.y
+              entity2.override();
             }
           }
           else{ //It's a circle and something else, do nothing
@@ -175,18 +171,10 @@ export default class Board{
           let collided = SAT.testPolygonPolygon(firstChalklingBox, secondChalklingBox, response);
           if(collided){
             let collidedVector = response.overlapV.scale(0.6); //How much they overlap
-            this.getBinded(function(rune){
-              if(entity1.ID == rune.ID){
-                rune.Position.X -=collidedVector.x;
-                rune.Position.Y -=collidedVector.y;
-              }
-            });
-            this.getBinded(function(rune){
-              if(entity2.ID == rune.ID){
-                rune.Position.X +=collidedVector.x;
-                rune.Position.Y +=collidedVector.y;
-              }
-            });
+            entity1.Position.X -=collidedVector.x;
+            entity1.Position.Y -=collidedVector.y;
+            entity2.Position.X +=collidedVector.x;
+            entity2.Position.Y +=collidedVector.y;
             if(entity1.Player != entity2.Player){ //Shit! We just bumped into an enemy. Drop everything and KILL THEM
               entity1.Target = entity2;
               entity1.override();
