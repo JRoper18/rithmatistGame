@@ -131,28 +131,24 @@ export default class Board{
         let response = new SAT.Response();
         let entity1 = runes[i];
         let entity2 = runes[j];
-        let x1 = entity1.Position.X;
-        let y1 = entity1.Position.Y;
-        let x2 = entity2.Position.X;
-        let y2 = entity2.Position.Y;
         if(entity1.constructor.name == "Circle" || entity2.constructor.name == "Circle"){ //One's a circle
           if(entity1.constructor.name == "Circle" && entity2.constructor.name == "Circle"){ //Both circles
 
           }
           else if(entity1.Name != null){ //1 is chalkling, 2 is circle
-            if(SAT.testPolygonPolygon(new B(new V(x1,y1), 100, 100).toPolygon(), entity2.toSATPolygon(), response)){
-              entity1.Position.X -= response.overlapV.x
-              entity1.Position.Y -= response.overlapV.y
+            if(SAT.testPolygonPolygon(new B(new V(entity1.TopLeft.X, entity1.TopLeft.Y), 100, 100).toPolygon(), entity2.toSATPolygon(), response)){
+              entity1.Position.X -= (response.overlapV.x + 10)
+              entity1.Position.Y -= (response.overlapV.y + 10)
               //Stop the chalkling from walking, so it doesn't get stuck there.
               entity1.CurrentAction = "IDLE"
               entity1.override();
             }
           }
           else if(entity2.Name != null){ //2 is chalkling, 1 is circle
-            if(SAT.testPolygonPolygon(new B(new V(x2, y2), 100, 100).toPolygon(), entity1.toSATPolygon(), response)){
+            if(SAT.testPolygonPolygon(new B(new V(entity2.TopLeft.X, entity2.TopLeft.Y), 100, 100).toPolygon(), entity1.toSATPolygon(), response)){
               let moveToPoint = new Point(response.overlapV.x, response.overlapV.y)
-              entity2.Position.X -= response.overlapV.x
-              entity2.Position.Y -= response.overlapV.y
+              entity2.Position.X -= (response.overlapV.x + 10)
+              entity2.Position.Y -= (response.overlapV.y + 10)
               entity2.CurrentAction = "IDLE"
               entity2.override();
             }
@@ -162,13 +158,9 @@ export default class Board{
           }
         }
         else if(entity1.Name != null && entity2.Name != null){ //Both are chalklings
-          let x1 = entity1.Position.X;
-          let y1 = entity1.Position.Y;
-          let x2 = entity2.Position.X;
-          let y2 = entity2.Position.Y;
           //Create a bounding box around chalkling
-          let firstChalklingBox = new B(new V(x1,y1), 100, 100).toPolygon();
-          let secondChalklingBox = new B(new V(x2,y2), 100, 100).toPolygon();
+          let firstChalklingBox = new B(new V(entity1.TopLeft.X, entity1.TopLeft.Y), 100, 100).toPolygon();
+          let secondChalklingBox = new B(new V(entity2.TopLeft.X, entity2.TopLeft.Y), 100, 100).toPolygon();
           let collided = SAT.testPolygonPolygon(firstChalklingBox, secondChalklingBox, response);
           if(collided){
             let collidedVector = response.overlapV.scale(0.6); //How much they overlap
@@ -194,7 +186,7 @@ export default class Board{
     let chalkling = null;
     this.getBinded(function(rune){
       if(rune.Name != null){
-        if(SAT.pointInPolygon(vecPoint, new B(new V(rune.Position.X, rune.Position.Y), 100, 100).toPolygon())){
+        if(SAT.pointInPolygon(vecPoint, new B(new V(rune.TopLeft.X, rune.TopLeft.Y), 100, 100).toPolygon())){
           chalkling = rune;
         }
       }

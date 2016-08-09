@@ -1,5 +1,6 @@
 import * as coord from '../coord.js';
 import ChalklingCommand from './chalklingCommand.js';
+import Point from '../point.js'
 
 export default class Chalkling{
   constructor(name, id, player, position, attributeSet, animationData){
@@ -15,6 +16,7 @@ export default class Chalkling{
     this.Queue = [];
     this.Target = null;
     this.Path = []
+    this.TopLeft = new Point(this.Position.X - 50, this.Position.Y - 50)
   }
   getAnimation(){ //Example path: ./chalklings/Testling/Animations/Idle/X
     let pathToAnimation = '';
@@ -120,6 +122,8 @@ export default class Chalkling{
     return enemies;
   }
   update(){
+    //Update topleft;
+    this.TopLeft = new Point(this.Position.X - 50, this.Position.Y - 50)
     if(this.Attributes.Health == 0){ //1. Is it dead?
       this.die();
       return;
@@ -168,10 +172,10 @@ export default class Chalkling{
   }
   render(){
     this.update();
-    let chalklingImage = "<image xlink:href=\""  + this.getAnimation() + "\" x=\"" + (this.Position.X).toString()+ "\" y=\"" + (this.Position.Y).toString() + "\" height=\"100\" width=\"100\" />"
-    let healthBarOutside = '<rect x="' + (this.Position.X).toString() + '" y="' + (this.Position.Y+110).toString() + '" width="100" height="5" fill="green"/>';
+    let chalklingImage = "<image xlink:href=\""  + this.getAnimation() + "\" x=\"" + (this.TopLeft.X).toString()+ "\" y=\"" + (this.TopLeft.Y).toString() + "\" height=\"100\" width=\"100\" />"
+    let healthBarOutside = '<rect x="' + (this.TopLeft.X).toString() + '" y="' + (this.TopLeft.Y+110).toString() + '" width="100" height="5" fill="green"/>';
     let healthRatio = (((this.Attributes.MaxHealth-this.Attributes.Health)/this.Attributes.MaxHealth)*100);
-    let healthBarLeft = '<rect x="' + ((this.Position.X) + (100-healthRatio)).toString() + '" y="' + (this.Position.Y+110).toString() + '" width="' + healthRatio.toString() +  '" height="5" fill="red"/>';
+    let healthBarLeft = '<rect x="' + ((this.TopLeft.X) + (100-healthRatio)).toString() + '" y="' + (this.TopLeft.Y+110).toString() + '" width="' + healthRatio.toString() +  '" height="5" fill="red"/>';
     return chalklingImage + healthBarOutside + healthBarLeft;
   }
 }
