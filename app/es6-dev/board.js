@@ -39,7 +39,7 @@ export default class Board{
         mostLikelyCircle = tempCircle;
       }
     }
-    if(mostLikelyCircleError > 50){ //If the error is too high (>200 pixels);
+    if(mostLikelyCircleError > 50){ //If the error is too high (>50 pixels);
       //Don't bind it, just make it unbinded.
       this.Contains.push(circle);
     }
@@ -89,7 +89,6 @@ export default class Board{
   getBindedIncursion(rune, binded, callback){
     if(typeof rune.HasBinded != "undefined"){ //has binded stuff, find it recursively
       for(let i = 0; i<rune.HasBinded.length; i++){
-        console.log(rune.HasBinded.length)
         this.getBindedIncursion(rune.HasBinded[i], binded, callback);
       }
       binded.push(rune)
@@ -141,18 +140,20 @@ export default class Board{
 
           }
           else if(entity1.Name != null){ //1 is chalkling, 2 is circle
-            if(SAT.testPolygonCircle(new B(new V(x1,y1), 100, 100).toPolygon(), new C(new V(x2, y2), entity2.Radius), response)){
+            if(SAT.testPolygonPolygon(new B(new V(x1,y1), 100, 100).toPolygon(), entity2.toSATPolygon(), response)){
               entity1.Position.X -= response.overlapV.x
               entity1.Position.Y -= response.overlapV.y
               //Stop the chalkling from walking, so it doesn't get stuck there.
+              entity1.CurrentAction = "IDLE"
               entity1.override();
             }
           }
           else if(entity2.Name != null){ //2 is chalkling, 1 is circle
-            if(SAT.testPolygonCircle(new B(new V(x2, y2), 100, 100).toPolygon(), new C(new V(x1, y1), entity1.Radius), response)){
+            if(SAT.testPolygonPolygon(new B(new V(x2, y2), 100, 100).toPolygon(), entity1.toSATPolygon(), response)){
               let moveToPoint = new Point(response.overlapV.x, response.overlapV.y)
               entity2.Position.X -= response.overlapV.x
               entity2.Position.Y -= response.overlapV.y
+              entity2.CurrentAction = "IDLE"
               entity2.override();
             }
           }

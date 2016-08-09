@@ -12,6 +12,16 @@ export default class Circle extends Rune {
 		this.Radius = this.averageDistanceFromCenter();
 		this.HasBinded = [];
 	}
+	toSATPolygon(){
+		let P = SAT.Polygon; //Shortening for easier typing
+		let V = SAT.Vector;
+		let pointArray = []
+		for(let i = 0; i<this.Points.length;i++){
+			pointArray.push(new V(this.Points[i].X, this.Points[i].Y));
+		}
+		return new P(new V(), pointArray);
+
+	}
 	averageDistanceFromCenter() {
 		let distances = 0;
 		for (let i = 0; i < this.Points.length; i++) {

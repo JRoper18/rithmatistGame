@@ -10,7 +10,7 @@ export default class ChalklingCommand{
   }
   override(){
     this.EndCondition = function(){
-      return true
+      return "reject"
     }
     this.Action = function(){
       return;

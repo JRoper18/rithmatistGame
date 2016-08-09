@@ -59,7 +59,10 @@ export default class Chalkling{
       else{
         self.Queue.push(command);
         let interval = setInterval(function(){
-          if(command.EndCondition(self)){
+          if(command.EndCondition(self) == "reject"){
+            reject(new Error("Nothing to see here"));
+          }
+          else if(command.EndCondition(self)){
             clearInterval(interval)
             self.Queue.splice(self.checkQueue(command, self), 1)
             resolve();
@@ -94,7 +97,7 @@ export default class Chalkling{
     let moveToPromise = this.moveTo(path[index]);
     let self = this;
     if(index != path.length-1){ //We still have more points to goto
-      moveToPromise.then(function(){self.moveAlongPath(path, index+1)})
+      moveToPromise.then(function(){self.moveAlongPath(path, index+1)}).catch(function(error){});
     }
     else{}
   }
