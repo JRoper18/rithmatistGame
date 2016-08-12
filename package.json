@@ -3,7 +3,7 @@
     "remove": "rm -rf node_modules",
     "dev-server": "webpack-dev-server"
   },
-  "devDependencies": {
+  "dependencies": {
     "babel": "latest",
     "babel-loader": "latest",
     "babel-plugin-transform-regenerator": "^6.9.0",

@@ -13,7 +13,6 @@ export default class Chalkling{
     this.Frame = 0;
     this.Sees = [];
     this.AnimationEnd = -1;
-    this.Queue = [];
     this.Target = null;
     this.Path = []
     this.TopLeft = new Point(this.Position.X - 50, this.Position.Y - 50)
@@ -44,69 +43,13 @@ export default class Chalkling{
     }
     return pathToAnimation;
   }
-  checkQueue(object, chalkling){
-    for(let i = 0; i<this.Queue.length;i++){
-      if(this.Queue[i].toString() == object.toString()){
-        return i;
-      }
-    }
-    return -1;
-  }
-  doCommand(command, override = false){
-    let self = this;
-    let promise = new Promise(function(resolve, reject){
-      if(!override && self.checkQueue(command, self) != -1){
-
-      }
-      else{
-        self.Queue.push(command);
-        let interval = setInterval(function(){
-          if(command.EndCondition(self) == "reject"){
-            reject(new Error("Nothing to see here"));
-          }
-          else if(command.EndCondition(self)){
-            clearInterval(interval)
-            self.Queue.splice(self.checkQueue(command, self), 1)
-            resolve();
-          }
-          else{
-            command.Action(self)
-          }
-        }, command.Time);
-      }
-    });
-    return promise;
-  }
   moveTo(position){
     this.CurrentAction = "WALK";
     this.Target = null;
-    let self = this;
-    let promise = this.doCommand(new ChalklingCommand(function(chalkling){
-      chalkling.Position = coord.movePointAlongLine(chalkling.Position, position, chalkling.Attributes.MovementSpeed/30)
-    }, 33, function(chalkling){
-        if(coord.Distance(chalkling.Position, position)<10 || chalkling.CurrentAction != "WALK"){
-          chalkling.CurrentAction = "IDLE";
-          return true;
-        }
-        else{
-          return false;
-        }
-    }), true);
-    return promise;
+    this.Path = [position];
   }
-  moveAlongPath(path, index = 0){  //Path is array of points
-    this.override();
-    let moveToPromise = this.moveTo(path[index]);
-    let self = this;
-    if(index != path.length-1){ //We still have more points to goto
-      moveToPromise.then(function(){self.moveAlongPath(path, index+1)}).catch(function(error){});
-    }
-    else{}
-  }
-  override(){
-    for(let i = 0; i<this.Queue.length; i++){
-      this.Queue[i].override();
-    }
+  moveAlongPath(path){  //Path is array of points
+    this.Path = path;
   }
   die(){
     this.CurrentAction = "DEATH";
@@ -121,19 +64,30 @@ export default class Chalkling{
     }
     return enemies;
   }
+  override(){
+    this.CurrentAction = "IDLE";
+    this.Path = [];
+    this.Frame = 0;
+  }
   update(){
-    //Update topleft;
+    //Update topleft and frame
     this.TopLeft = new Point(this.Position.X - 50, this.Position.Y - 50)
-    if(this.Attributes.Health == 0){ //1. Is it dead?
+    this.Frame++;
+    if(this.Attributes.Health <= 0){ //1. Is it dead?
       this.die();
       return;
     }
-    if(this.Frame == this.AnimationEnd){ //2. Is it's action done?
-      if(this.Queue.length != 0){
-        this.nextCommand();
-      }
-      else{
-        this.CurrentAction = "IDLE";
+    if(this.Frame >= this.AnimationEnd){ //2. Is it's action done?
+      if(this.CurrentAction == "ATTACK"){ //So I'm attacking someone and I just finished an attack animation. Should I continue?
+      console.log("EEY")
+
+        if(this.Target.Attributes.Health > 0){ //My enemy is alive! Time to finish the job.
+          this.CurrentAction = "ATTACK";
+          this.Target.Attributes.Health -= this.Attributes.Attack;
+        }
+        else{
+          this.CurrentAction = "IDLE";
+        }
       }
       this.Frame = 0;
     }
@@ -152,21 +106,20 @@ export default class Chalkling{
       }
       let self = this;
       if(coord.Distance(this.Target.Position, this.Position) <= this.Attributes.AttackRange){ //6. Should I move to follow my target?
-        this.CurrentAction = "ATTACK";
-        this.doCommand(new ChalklingCommand(function(chalkling){
-          chalkling.Target.Attributes.Health -= chalkling.Attributes.Attack;
-        }, self.Attributes.AttackRate, function(chalkling){
-          if(chalkling.CurrentAction != "ATTACK"){
-            return true;
-          }
-          else{
-            return false;
-          }
-        }))
+        if(this.CurrentAction != "ATTACK"){ //If we aren't already attacking...
+          this.CurrentAction = "ATTACK";
+        }
       }
-      else{
+      else{ //Follow him!
         this.CurrentAction = "WALK";
         this.moveTo(this.Target.Position);
+      }
+    }
+    if(this.Path.length != 0){ //Am I currently going somewhere?
+      let distanceToMove = (33/1000) * this.Attributes.MovementSpeed;
+      this.Position = coord.movePointAlongLine(this.Position, this.Path[0], distanceToMove);
+      if(coord.Distance(this.Position, this.Path[0]) < distanceToMove){ //Did I make it where I need to go?
+        this.Path.shift();
       }
     }
   }

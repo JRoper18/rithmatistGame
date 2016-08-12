@@ -140,7 +140,6 @@ export default class Board{
               entity1.Position.X -= (response.overlapV.x + 10)
               entity1.Position.Y -= (response.overlapV.y + 10)
               //Stop the chalkling from walking, so it doesn't get stuck there.
-              entity1.CurrentAction = "IDLE"
               entity1.override();
             }
           }
@@ -149,7 +148,6 @@ export default class Board{
               let moveToPoint = new Point(response.overlapV.x, response.overlapV.y)
               entity2.Position.X -= (response.overlapV.x + 10)
               entity2.Position.Y -= (response.overlapV.y + 10)
-              entity2.CurrentAction = "IDLE"
               entity2.override();
             }
           }
@@ -169,9 +167,7 @@ export default class Board{
             entity2.Position.X +=collidedVector.x;
             entity2.Position.Y +=collidedVector.y;
             if(entity1.Player != entity2.Player){ //Shit! We just bumped into an enemy. Drop everything and KILL THEM
-              entity1.Target = entity2;
               entity1.override();
-              entity2.Target = entity1;
               entity2.override();
             }
           }

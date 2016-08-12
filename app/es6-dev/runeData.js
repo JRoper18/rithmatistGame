@@ -16,7 +16,7 @@ export const allRunes = new Array(
     new Point(50, 150, 2), new Point(150, 50, 2)
   ))
 );
-//Private helper functions
+//Helper functions
 export function getUserRunes(recognizer, runes){ //Runes is array of the names of the runes that the user has.
   allRunes.forEach(function(item, index){
     for(let i = 0; i<runes.length; i++){
