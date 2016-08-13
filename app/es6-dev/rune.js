@@ -1,6 +1,7 @@
 import {allRunes, getRunePoints} from './runeData.js'
 import Point from './point.js'
 import * as coord from './coord.js'
+import RenderedElement from './renderedElement.js'
 
 export default class Rune{ //A Rune is a non-animated (static) set of points
   constructor(points, id){
@@ -30,13 +31,13 @@ export default class Rune{ //A Rune is a non-animated (static) set of points
     }
     switch(mode){
       case "DRAW":
-        return '<path stroke="black" fill="none" stroke-width = "1" d="' + svgPathString + '"></path>'
+        return new RenderedElement('<path stroke="black" fill="none" stroke-width = "1" d="' + svgPathString + '"></path>', "Rune");
         break;
       case "PATH":
-        return '<path stroke="black" stroke-dasharray= "5,5" fill="none" stroke-width = "1" d="' + svgPathString + '"></path>'
+        return new RenderedElement('<path stroke="black" stroke-dasharray= "5,5" fill="none" stroke-width = "1" d="' + svgPathString + '"></path>', "Rune")
         break;
       default:
-        return '<path stroke="black" fill="none" stroke-width = "1" d="' + svgPathString + '"></path>'
+        return new RenderedElement('<path stroke="black" fill="none" stroke-width = "1" d="' + svgPathString + '"></path>', "Rune");
 
     }
   }

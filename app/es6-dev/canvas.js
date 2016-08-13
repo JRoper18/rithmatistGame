@@ -89,6 +89,6 @@ export default class Canvas{
       default:
         path = this.CurrentRune.render();
     }
-    return path;
+    return path.RenderString;
   }
 }

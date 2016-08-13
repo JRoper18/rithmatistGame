@@ -1,5 +1,6 @@
 import * as coord from '../coord.js';
 import Point from '../point.js'
+import RenderedElement from '../renderedElement.js'
 
 export default class Chalkling{
   constructor(name, id, player, position, attributeSet, animationData){
@@ -134,6 +135,7 @@ export default class Chalkling{
     let healthBarOutside = '<rect x="' + (this.TopLeft.X).toString() + '" y="' + (this.TopLeft.Y+110).toString() + '" width="100" height="5" fill="green"/>';
     let healthRatio = (((this.Attributes.MaxHealth-this.Attributes.Health)/this.Attributes.MaxHealth)*100);
     let healthBarLeft = '<rect x="' + ((this.TopLeft.X) + (100-healthRatio)).toString() + '" y="' + (this.TopLeft.Y+110).toString() + '" width="' + healthRatio.toString() +  '" height="5" fill="red"/>';
-    return chalklingImage + healthBarOutside + healthBarLeft;
+    let healthBarTotal = healthBarOutside + healthBarLeft
+    return [new RenderedElement(chalklingImage, "ChalklingImage"), new RenderedElement(healthBarTotal, "ChalklingHealth")]
   }
 }

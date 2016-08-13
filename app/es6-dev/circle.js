@@ -3,6 +3,7 @@ import Rune from './rune.js';
 import * as coord from './coord.js';
 import Point from './point.js';
 import * as SAT from '../../node_modules/sat'
+import RenderedElement from './renderedElement.js'
 
 export default class Circle extends Rune {
 	constructor(Points, ID) {
@@ -75,6 +76,7 @@ export default class Circle extends Rune {
 		//Circle formula for paths found here: http://stackoverflow.com/questions/5737975/circle-drawing-with-svgs-arc-path/10477334#10477334
 		let perfectCircle = "<path fill='none' stroke='#af9e9e' strokewidth=3 d='M" + this.Position.X + " " + this.Position.Y + "m" + (-1 * radius).toString() + " 0a" + r + "," + r + " 0 1,0 " + (radius * 2).toString() + ",0" + "a " + r + "," + r + " 0 1,0 " + (radius * -2).toString() + ",0" + "'></path>"
 		let realCircle = new Rune(this.Points).render()
-		return perfectCircle + realCircle;
+		realCircle.Type = "CirclePoints"
+		return [new RenderedElement(perfectCircle, "CircleTrue"), realCircle]
 	}
 }

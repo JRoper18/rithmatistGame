@@ -13,7 +13,7 @@ export default class Board{
     ], 2)];
     this.Selected = [];
     this.Contains[0].moveTo(new Point(0, 0))
-    this.Contains[1].moveTo(new Point(600, 0));
+    this.Contains[1].moveTo(new Point(300, 300));
     this.IDGenerator = this.getId();
   }
   *getId(){
@@ -137,7 +137,6 @@ export default class Board{
           }
           else if(this.isChalkling(entity1)){ //1 is chalkling, 2 is circle
             if(SAT.testPolygonPolygon(new B(new V(entity1.TopLeft.X, entity1.TopLeft.Y), 100, 100).toPolygon(), entity2.toSATPolygon(), response)){
-
               entity1.Position.X -= (response.overlapV.x + 1 * BOUNCE)
               entity1.Position.Y -= (response.overlapV.y + 1 * BOUNCE)
               //Stop the chalkling from walking, so it doesn't get stuck there.
@@ -148,7 +147,6 @@ export default class Board{
             if(SAT.testPolygonPolygon(new B(new V(entity2.TopLeft.X, entity2.TopLeft.Y), 100, 100).toPolygon(), entity1.toSATPolygon(), response)){
               entity2.Position.X -= (response.overlapV.x + 1 * BOUNCE)
               entity2.Position.Y -= (response.overlapV.y  + 1 * BOUNCE)
-
               entity2.override();
             }
           }
@@ -162,7 +160,7 @@ export default class Board{
           let secondChalklingBox = new B(new V(entity2.TopLeft.X, entity2.TopLeft.Y), 100, 100).toPolygon();
           let collided = SAT.testPolygonPolygon(firstChalklingBox, secondChalklingBox, response);
           if(collided){
-            let collidedVector = response.overlapV.scale(0.6); //How much they overlap
+            let collidedVector = response.overlapV.scale(0.5); //How much they overlap
             entity1.Position.X -=collidedVector.x;
             entity1.Position.Y -=collidedVector.y;
             entity2.Position.X +=collidedVector.x;
@@ -198,10 +196,35 @@ export default class Board{
     this.removeDeadChalklings();
     this.updateHitboxes();
     this.updateChalklingView();
-    let renderString = '' ;
+    let renderedElements = [];
     this.getBinded((rune) =>{
-      renderString += rune.render();
+      let runeElements = rune.render();
+      for(let i = 0; i<runeElements.length; i++){ //Some render functions return multiple renderedElements, so go through all of them.
+        let tempElement = runeElements[i]
+        let order = devConfig.renderOrder[tempElement.Type] //Get the render order based on the current rune's type
+        if(renderedElements.length == 0){
+          renderedElements.push(tempElement)
+        }
+        else{
+          let inserted = false;
+          for(let j = 0; j<renderedElements.length;j++){
+            let checkedElementOrder = devConfig.renderOrder[renderedElements[j].Type]
+            if(order<checkedElementOrder){ //We've searched too far in the array and found people with higher rendering order.
+              renderedElements.splice(j, 0, tempElement) //Insert us at the end of our rendering section.
+              inserted = true;
+              break;
+            }
+          }
+          if(!inserted){ //We are on the top of the rendering queue.
+            renderedElements.push(tempElement);
+          }
+        }
+      }
     })
+    let renderString = '';
+    for(let i = 0; i<renderedElements.length; i++){
+      renderString += renderedElements[i].RenderString;
+    }
     return renderString;
   }
 }
