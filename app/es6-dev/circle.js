@@ -2,6 +2,7 @@ import recognizer from './recognizer';
 import Rune from './rune.js';
 import * as coord from './coord.js';
 import Point from './point.js';
+import * as SAT from '../../node_modules/sat'
 
 export default class Circle extends Rune {
 	constructor(Points, ID) {

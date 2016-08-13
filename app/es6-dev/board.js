@@ -4,6 +4,8 @@ import Rune from './rune.js';
 import Circle from './circle.js';
 import {Testling} from './chalklings/chalklings.js'
 import ChalklingCommand from './chalkling/chalklingCommand.js'
+import * as SAT from '../../node_modules/sat'
+
 export default class Board{
   constructor(element){
     this.Element = element;
@@ -131,23 +133,25 @@ export default class Board{
         let response = new SAT.Response();
         let entity1 = runes[i];
         let entity2 = runes[j];
+        const BOUNCE = 1.1
         if(entity1.constructor.name == "Circle" || entity2.constructor.name == "Circle"){ //One's a circle
           if(entity1.constructor.name == "Circle" && entity2.constructor.name == "Circle"){ //Both circles
 
           }
           else if(entity1.Name != null){ //1 is chalkling, 2 is circle
             if(SAT.testPolygonPolygon(new B(new V(entity1.TopLeft.X, entity1.TopLeft.Y), 100, 100).toPolygon(), entity2.toSATPolygon(), response)){
-              entity1.Position.X -= (response.overlapV.x + 10)
-              entity1.Position.Y -= (response.overlapV.y + 10)
+              console.log(response)
+              entity1.Position.X -= (response.overlapV.x + 1 * BOUNCE)
+              entity1.Position.Y -= (response.overlapV.y + 1 * BOUNCE)
               //Stop the chalkling from walking, so it doesn't get stuck there.
               entity1.override();
             }
           }
           else if(entity2.Name != null){ //2 is chalkling, 1 is circle
             if(SAT.testPolygonPolygon(new B(new V(entity2.TopLeft.X, entity2.TopLeft.Y), 100, 100).toPolygon(), entity1.toSATPolygon(), response)){
-              let moveToPoint = new Point(response.overlapV.x, response.overlapV.y)
-              entity2.Position.X -= (response.overlapV.x + 10)
-              entity2.Position.Y -= (response.overlapV.y + 10)
+              entity2.Position.X -= (response.overlapV.x + 1 * BOUNCE)
+              entity2.Position.Y -= (response.overlapV.y  + 1 * BOUNCE)
+
               entity2.override();
             }
           }

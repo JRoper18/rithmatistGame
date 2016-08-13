@@ -43,7 +43,10 @@ module.exports = {
             {
                 loader: 'babel-loader',
                 test: /\.js$/,
-                exclude: /node_modules/,
+                include: [
+                  path.resolve(__dirname, "app"),
+                  path.resolve(__dirname, "node_modules/sat")
+                ],
                 presets : ['es2015']
             },
             {
