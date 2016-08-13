@@ -3,8 +3,8 @@ import Point from './point.js'
 import Rune from './rune.js';
 import Circle from './circle.js';
 import {Testling} from './chalklings/chalklings.js'
-import ChalklingCommand from './chalkling/chalklingCommand.js'
 import * as SAT from '../../node_modules/sat'
+import Chalkling from './chalkling/chalkling.js'
 
 export default class Board{
   constructor(element){
@@ -12,7 +12,6 @@ export default class Board{
     this.Contains = [new Testling(1, "red", new Point(300, 0)), new Circle([new Point(100,0,1), new Point(170,39, 1), new Point(200, 100, 1), new Point(170, 170, 1), new Point(100, 200, 1), new Point(39, 170, 1), new Point(0, 100, 1), new Point(39, 39, 1), new Point(100,0,1)
     ], 2)];
     this.Selected = [];
-    this.Chalklings = this.getChalklings();
     this.Contains[0].moveTo(new Point(0, 0))
     this.Contains[1].moveTo(new Point(600, 0));
     this.IDGenerator = this.getId();
@@ -25,7 +24,7 @@ export default class Board{
   }
   newCircle(circle){
     let allCircles = [];
-    this.getBinded(function(rune){
+    this.getBinded((rune) =>{
       if(rune.constructor.name == "Circle"){
         allCircles.push(rune)
       }
@@ -64,15 +63,6 @@ export default class Board{
 
     }
   }
-  getChalklings(){
-    let chalklings = [];
-    this.getBinded(function(rune){
-      if(rune.Name != null){
-        chalklings.push(rune);
-      }
-    });
-    return chalklings;
-  }
   moveChalklingAlongPath(path){
     if(this.Selected[0] != null){
       for(let i = 0; i<this.Selected.length; i++){
@@ -101,15 +91,21 @@ export default class Board{
     callback(rune);
   }
   removeDeadChalklings(){
-    let chalklings = this.Chalklings;
-    for(let chalkling of chalklings){
-      if(chalkling.CurrentAction == "DEATH"){
-        this.Contains.splice(this.Contains.indexOf(chalkling), 1); //If the chalkling is dead, removes is from board.
+    this.getBinded((rune) => {
+      if(this.isChalkling(rune)){
+        if(rune.CurrentAction == "DEATH"){
+          this.Contains.splice(this.Contains.indexOf(rune), 1); //If the chalkling is dead, removes is from board.
+        }
       }
-    }
+    })
   }
   updateChalklingView(){ //Updates what each chalkling can see.
-    let chalklings = this.Chalklings;
+    let chalklings = []
+    this.getBinded((rune) => {
+      if(this.isChalkling(rune)){
+        chalklings.push(rune);
+      }
+    })
     for(let j = 0; j<chalklings.length; j++){
       for(let k = 0; k<chalklings.length; k++){
         let currentDistance = coord.Distance(chalklings[j].Position, chalklings[k].Position)
@@ -133,21 +129,22 @@ export default class Board{
         let response = new SAT.Response();
         let entity1 = runes[i];
         let entity2 = runes[j];
+        response.clear();
         const BOUNCE = 1.1
         if(entity1.constructor.name == "Circle" || entity2.constructor.name == "Circle"){ //One's a circle
           if(entity1.constructor.name == "Circle" && entity2.constructor.name == "Circle"){ //Both circles
 
           }
-          else if(entity1.Name != null){ //1 is chalkling, 2 is circle
+          else if(this.isChalkling(entity1)){ //1 is chalkling, 2 is circle
             if(SAT.testPolygonPolygon(new B(new V(entity1.TopLeft.X, entity1.TopLeft.Y), 100, 100).toPolygon(), entity2.toSATPolygon(), response)){
-              console.log(response)
+
               entity1.Position.X -= (response.overlapV.x + 1 * BOUNCE)
               entity1.Position.Y -= (response.overlapV.y + 1 * BOUNCE)
               //Stop the chalkling from walking, so it doesn't get stuck there.
               entity1.override();
             }
           }
-          else if(entity2.Name != null){ //2 is chalkling, 1 is circle
+          else if(this.isChalkling(entity2)){ //2 is chalkling, 1 is circle
             if(SAT.testPolygonPolygon(new B(new V(entity2.TopLeft.X, entity2.TopLeft.Y), 100, 100).toPolygon(), entity1.toSATPolygon(), response)){
               entity2.Position.X -= (response.overlapV.x + 1 * BOUNCE)
               entity2.Position.Y -= (response.overlapV.y  + 1 * BOUNCE)
@@ -159,7 +156,7 @@ export default class Board{
 
           }
         }
-        else if(entity1.Name != null && entity2.Name != null){ //Both are chalklings
+        else if(this.isChalkling(entity1) && this.isChalkling(entity2)){ //Both are chalklings
           //Create a bounding box around chalkling
           let firstChalklingBox = new B(new V(entity1.TopLeft.X, entity1.TopLeft.Y), 100, 100).toPolygon();
           let secondChalklingBox = new B(new V(entity2.TopLeft.X, entity2.TopLeft.Y), 100, 100).toPolygon();
@@ -170,10 +167,6 @@ export default class Board{
             entity1.Position.Y -=collidedVector.y;
             entity2.Position.X +=collidedVector.x;
             entity2.Position.Y +=collidedVector.y;
-            if(entity1.Player != entity2.Player){ //Shit! We just bumped into an enemy. Drop everything and KILL THEM
-              entity1.override();
-              entity2.override();
-            }
           }
         }
       }
@@ -184,8 +177,8 @@ export default class Board{
     let B = SAT.Box;
     let vecPoint = new V(point.X, point.Y);
     let chalkling = null;
-    this.getBinded(function(rune){
-      if(rune.Name != null){
+    this.getBinded((rune) => {
+      if(this.isChalkling(rune)){
         if(SAT.pointInPolygon(vecPoint, new B(new V(rune.TopLeft.X, rune.TopLeft.Y), 100, 100).toPolygon())){
           chalkling = rune;
         }
@@ -193,27 +186,20 @@ export default class Board{
     })
     return chalkling;
   }
-  updateChalklingTargetPositions(){
-    let chalklings = this.Chalklings;
-    for(let i = 0; i<chalklings.length; i++){
-      for(let j = 0; j<chalklings.length; j++){
-        if(chalklings[i].Target.ID == chalklings[j].ID){
-          chalklings[i].Target.Position = chalklings[j].Position;
-        }
-        else if(chalklings[j].Target.ID == chalklings[i].ID){
-          chalklings[j].Target.Position = chalklings[i].Position;
-        }
-      }
+  isChalkling(rune){
+    if(rune.__proto__ instanceof Chalkling){
+      return true
     }
-    this.Chalklings = chalklings;
+    else{
+      return false;
+    }
   }
   render(){
-    this.Chalklings = this.getChalklings();
     this.removeDeadChalklings();
     this.updateHitboxes();
     this.updateChalklingView();
     let renderString = '' ;
-    this.getBinded(function(rune){
+    this.getBinded((rune) =>{
       renderString += rune.render();
     })
     return renderString;

@@ -20,7 +20,8 @@ export default class Circle extends Rune {
 		for(let i = 0; i<this.Points.length;i++){
 			pointArray.push(new V(this.Points[i].X, this.Points[i].Y));
 		}
-		return new P(new V(), pointArray);
+		let polygon = new P(new V(), pointArray)
+		return polygon;
 
 	}
 	averageDistanceFromCenter() {

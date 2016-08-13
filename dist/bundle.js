@@ -64,15 +64,28 @@
 
 	console.log('hello world from ' + __dirname);
 
-	var b = new _board2.default('#content');
-	var c = new _canvas2.default(b, ["circle", "attack"]);
-	var i = 0;
-	setInterval(function () {
+	var b = void 0;
+	var c = void 0;
+
+	window.onload = function () {
+	  b = new _board2.default('#content');
+	  c = new _canvas2.default(b, ["circle", "attack"]);
+	  var i = 0;
+	  setTimeout(function () {
+	    setInterval(function () {
+	      update();
+	      render();
+	      i++;
+	    }, 30);
+	  }, 0);
+	};
+
+	function update() {}
+	function render() {
 	  var svgElements = "<svg width='100%' height='100%'>" + b.render() + c.render() + "</svg>";
 	  $(b.Element).empty();
 	  $(b.Element).append(svgElements);
-	  debugger;
-	}, 30);
+	}
 	/* WEBPACK VAR INJECTION */}.call(exports, "/"))
 
 /***/ },
@@ -105,6 +118,12 @@
 
 	var _point2 = _interopRequireDefault(_point);
 
+	var _coord = __webpack_require__(3);
+
+	var coord = _interopRequireWildcard(_coord);
+
+	function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
+
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
@@ -115,41 +134,95 @@
 
 	    this.Board = board;
 	    this.Runes = runes;
+	    this.Mode = "COMMAND";
 	    this.CurrentRune = new _rune2.default([]);
-	    var self = this;
-	    var strokeId = 1;
-	    var recognizer = new _recognizer2.default();
-	    (0, _runeData.getUserRunes)(recognizer, runes);
-	    var DOM = this.Board.Element;
-	    $(DOM).on("mousedown", function (mouseDownEvent) {
-	      $(DOM).on("mousemove", function (mouseMoveEvent) {
-	        var parentOffset = $(DOM).offset();
-	        //Offset allows for containers that don't fit thte entire page and work inside the surface.
-	        var relX = mouseMoveEvent.pageX - parentOffset.left;
-	        var relY = mouseMoveEvent.pageY - parentOffset.top;
-
-	        //Add the new point data
-	        self.CurrentRune.Points.push(new _point2.default(relX, relY, strokeId));
-	      });
-	    });
-	    $(DOM).on("mouseup", function () {
-	      $(DOM).off("mousemove");
-	      var recognizedResult = recognizer.Recognize(self.CurrentRune.Points);
-	      //WARNING Recognize adds 99-98 more randon points to a point array, which is why I made a clone of of the points and then recognized the clone.
-	      if (recognizedResult.Score > 0.5) {
-	        //If they just drew something
-	        self.Board.newRune(recognizedResult.Name, self.CurrentRune.Points);
-	        self.CurrentRune = new _rune2.default([]);
-	      }
-	      strokeId++;
-	      self.LastStroke = new _rune2.default([]);
-	    });
+	    this.enable();
 	  }
 
 	  _createClass(Canvas, [{
+	    key: 'disable',
+	    value: function disable() {
+	      $(document).unbind();
+	      $(this.Board.Element).unbind();
+	    }
+	  }, {
+	    key: 'changeMode',
+	    value: function changeMode(mode) {
+	      this.CurrentRune = new _rune2.default([]);
+	      this.Mode = mode;
+	      this.disable();
+	      this.enable();
+	    }
+	  }, {
+	    key: 'enable',
+	    value: function enable() {
+	      console.log("Re-enabled");
+	      var self = this;
+	      var strokeId = 1;
+	      var recognizer = new _recognizer2.default();
+	      (0, _runeData.getUserRunes)(recognizer, this.Runes);
+	      var DOM = this.Board.Element;
+	      $(document).on("keydown", function (key) {
+	        if (key.which == 90) {
+	          //If "z" key held down
+	          //Clear Points
+	          self.CurrentRune.Points = [];
+	        } else if (key.which == 49) {
+	          //"1" key
+	          //Set to draw mode
+	          self.changeMode("DRAW");
+	        } else if (key.which == 50) {
+	          //"2" key
+	          //Set to path mode
+	          self.changeMode("COMMAND");
+	        }
+	      });
+	      $(DOM).on("mousedown", function (mouseDownEvent) {
+	        if (self.Mode == "COMMAND") {
+	          var newSelected = self.Board.selectChalklingAtPoint(new _point2.default(mouseDownEvent.pageX, mouseDownEvent.pageY));
+	          self.Board.Selected = [newSelected];
+	        }
+	        console.log("Mouse down");
+	        $(DOM).on("mousemove", function (mouseMoveEvent) {
+	          var parentOffset = $(DOM).offset();
+	          //Offset allows for containers that don't fit thte entire page and work inside the surface.
+	          var relX = mouseMoveEvent.pageX - parentOffset.left;
+	          var relY = mouseMoveEvent.pageY - parentOffset.top;
+	          //Add the new point data
+	          self.CurrentRune.Points.push(new _point2.default(relX, relY, strokeId));
+	        });
+	      });
+	      $(DOM).on("mouseup", function () {
+	        $(DOM).off("mousemove");
+	        if (self.Mode == "DRAW") {
+	          var recognizedResult = recognizer.Recognize(self.CurrentRune.Points);
+	          //WARNING Recognize adds 99-98 more randon points to a point array, which is why I made a clone of of the points and then recognized the clone.
+	          if (recognizedResult.Score > 0.1) {
+	            //If they just drew something
+	            self.Board.newRune(recognizedResult.Name, self.CurrentRune.Points, "blu");
+	            self.CurrentRune = new _rune2.default([]);
+	          }
+	          strokeId++;
+	        } else if (self.Mode == "COMMAND") {
+	          self.Board.moveChalklingAlongPath(self.CurrentRune.Points);
+	          self.CurrentRune = new _rune2.default([]);
+	        }
+	      });
+	    }
+	  }, {
 	    key: 'render',
 	    value: function render() {
-	      var path = this.CurrentRune.render();
+	      var path = void 0;
+	      switch (this.Mode) {
+	        case "DRAW":
+	          path = this.CurrentRune.render();
+	          break;
+	        case "COMMAND":
+	          path = this.CurrentRune.render("PATH");
+	          break;
+	        default:
+	          path = this.CurrentRune.render();
+	      }
 	      return path;
 	    }
 	  }]);
@@ -265,7 +338,7 @@
 	Object.defineProperty(exports, "__esModule", {
 		value: true
 	});
-	exports.CloudDistance = exports.Resample = exports.Scale = exports.TranslateTo = exports.GreedyCloudMatch = exports.Centroid = exports.PathDistance = exports.PathLength = exports.Distance = undefined;
+	exports.movePointAlongLine = exports.CloudDistance = exports.Resample = exports.Scale = exports.TranslateTo = exports.GreedyCloudMatch = exports.Centroid = exports.PathDistance = exports.PathLength = exports.Distance = undefined;
 
 	var _point = __webpack_require__(4);
 
@@ -335,7 +408,16 @@
 	//
 	// Point class
 	//
-
+	function movePointAlongLine(pt1, pt2, distanceToMove) {
+		var dx = pt2.X - pt1.X;
+		var dy = pt2.Y - pt1.Y;
+		var distance = Distance(pt1, pt2);
+		var unitX = dx / distance;
+		var unitY = dy / distance;
+		var newX = unitX * distanceToMove + pt1.X;
+		var newY = unitY * distanceToMove + pt1.Y;
+		return new _point2.default(newX, newY);
+	}
 	function GreedyCloudMatch(points, P) {
 		var e = 0.50;
 		var step = Math.floor(Math.pow(points.length, 1 - e));
@@ -467,6 +549,7 @@
 	exports.Scale = Scale;
 	exports.Resample = Resample;
 	exports.CloudDistance = CloudDistance;
+	exports.movePointAlongLine = movePointAlongLine;
 
 /***/ },
 /* 4 */
@@ -560,7 +643,7 @@
 	///0.707 is 1+(1/sqrt2),
 	//This isn't a circle, just a diagonal octagon.
 	new _point2.default(100, 0, 1), new _point2.default(170, 39, 1), new _point2.default(200, 100, 1), new _point2.default(170, 170, 1), new _point2.default(100, 200, 1), new _point2.default(39, 170, 1), new _point2.default(0, 100, 1), new _point2.default(39, 39, 1), new _point2.default(100, 0, 1))), new _pointcloud2.default("amplify", new Array(new _point2.default(0, 100, 1), new _point2.default(200, 100, 1), new _point2.default(100, 0, 1), new _point2.default(100, 200, 1), new _point2.default(200, 200, 1), new _point2.default(50, 150, 2), new _point2.default(150, 50, 2))));
-	//Private helper functions
+	//Helper functions
 	function getUserRunes(recognizer, runes) {
 	  //Runes is array of the names of the runes that the user has.
 	  allRunes.forEach(function (item, index) {
@@ -608,11 +691,15 @@
 
 	var _circle2 = _interopRequireDefault(_circle);
 
-	var _chalklings = __webpack_require__(10);
+	var _chalklings = __webpack_require__(11);
 
-	var _chalklingCommand = __webpack_require__(12);
+	var _sat = __webpack_require__(10);
 
-	var _chalklingCommand2 = _interopRequireDefault(_chalklingCommand);
+	var SAT = _interopRequireWildcard(_sat);
+
+	var _chalkling = __webpack_require__(12);
+
+	var _chalkling2 = _interopRequireDefault(_chalkling);
 
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
@@ -625,11 +712,12 @@
 	    _classCallCheck(this, Board);
 
 	    this.Element = element;
-	    this.Contains = [_chalklings.Testling, _chalklings.EnemyTestling, new _circle2.default([new _point2.default(100, 0, 1), new _point2.default(170, 39, 1), new _point2.default(200, 100, 1), new _point2.default(170, 170, 1), new _point2.default(100, 200, 1), new _point2.default(39, 170, 1), new _point2.default(0, 100, 1), new _point2.default(39, 39, 1), new _point2.default(100, 0, 1)], 4)];
-	    this.Contains[2].X = 400;
-	    this.Contains[2].Y = 300;
-	    this.Chalklings = this.getChalklings();
-	    this.Contains[0].Position.X = 0;
+	    this.Contains = [new _chalklings.Testling(1, "red", new _point2.default(300, 0)), new _circle2.default([new _point2.default(100, 0, 1), new _point2.default(170, 39, 1), new _point2.default(200, 100, 1), new _point2.default(170, 170, 1), new _point2.default(100, 200, 1), new _point2.default(39, 170, 1), new _point2.default(0, 100, 1), new _point2.default(39, 39, 1), new _point2.default(100, 0, 1)], 2)];
+	    this.Selected = [];
+	    console.log(this.Contains[0]);
+	    this.Contains[0].moveTo(new _point2.default(0, 0));
+	    this.Contains[1].moveTo(new _point2.default(600, 0));
+	    this.IDGenerator = this.getId();
 	  }
 
 	  _createClass(Board, [{
@@ -641,10 +729,21 @@
 	          switch (_context.prev = _context.next) {
 	            case 0:
 	              index = 3;
-	              _context.next = 3;
+
+	            case 1:
+	              if (false) {
+	                _context.next = 6;
+	                break;
+	              }
+
+	              _context.next = 4;
 	              return index++;
 
-	            case 3:
+	            case 4:
+	              _context.next = 1;
+	              break;
+
+	            case 6:
 	            case 'end':
 	              return _context.stop();
 	          }
@@ -655,17 +754,16 @@
 	    key: 'newCircle',
 	    value: function newCircle(circle) {
 	      var allCircles = [];
-	      for (var i = 0; i < this.Contains.length; i++) {
-	        if (this.Contains[i].constructor.name == "Circle") {
-	          var tempCircles = this.getBinded(function () {}, this.Contains[i]);
-	          allCircles = allCircles.concat(tempCircles, this.Contains[i]);
+	      this.getBinded(function (rune) {
+	        if (rune.constructor.name == "Circle") {
+	          allCircles.push(rune);
 	        }
-	      }
+	      });
 	      var mostLikelyCircle = void 0;
 	      var mostLikelyCircleError = Infinity;
-	      for (var _i = 0; _i < allCircles.length; _i++) {
-	        var tempCircle = allCircles[_i];
-	        var currentDistance = coord.Distance(tempCircle, new _point2.default(circle.X, circle.Y));
+	      for (var i = 0; i < allCircles.length; i++) {
+	        var tempCircle = allCircles[i];
+	        var currentDistance = coord.Distance(tempCircle.Position, circle.Position);
 	        var tempCircleError = currentDistance - (circle.Radius + tempCircle.Radius); //Measures to see how close the new circle is to touching the outside of the current one.
 	        if (tempCircleError < mostLikelyCircleError) {
 	          //The ideal error is 0 (they are perfectly tangent circles)
@@ -673,37 +771,41 @@
 	          mostLikelyCircle = tempCircle;
 	        }
 	      }
-	      if (mostLikelyCircleError > 200) {
-	        //If the error is too high (>200 pixels);
+	      if (mostLikelyCircleError > 50) {
+	        //If the error is too high (>50 pixels);
 	        //Don't bind it, just make it unbinded.
 	        this.Contains.push(circle);
 	      } else {
 	        //It's probably binded to the mostLikelyCircle
+	        var currentToBinded = coord.Distance(circle.Position, mostLikelyCircle.Position);
+	        var error = currentToBinded - circle.Radius - mostLikelyCircle.Radius;
+	        circle.moveTo(coord.movePointAlongLine(circle.Position, mostLikelyCircle.Position, error));
 	        mostLikelyCircle.bindRune(circle);
 	      }
 	    }
 	  }, {
 	    key: 'newRune',
-	    value: function newRune(name, points) {
+	    value: function newRune(name, points, team) {
 	      switch (name) {
 	        case "circle":
-	          var circle = new _circle2.default(points);
+	          var circle = new _circle2.default(points, this.IDGenerator.next());
 	          this.newCircle(circle);
 	          break;
+	        case "attack":
+	          this.Contains.push(new _chalklings.Testling(this.IDGenerator.next(), team, new _point2.default(coord.Centroid(points).X, coord.Centroid(points).Y)));
 	        default:
 
 	      }
 	    }
 	  }, {
-	    key: 'getChalklings',
-	    value: function getChalklings() {
-	      var chalklings = [];
-	      this.getBinded(function (rune) {
-	        if (rune.constructor.name == "Chalkling") {
-	          chalklings.push(rune);
+	    key: 'moveChalklingAlongPath',
+	    value: function moveChalklingAlongPath(path) {
+	      if (this.Selected[0] != null) {
+	        for (var i = 0; i < this.Selected.length; i++) {
+	          var currentSelected = this.Selected[i];
+	          currentSelected.moveAlongPath(path);
 	        }
-	      });
-	      return chalklings;
+	      }
 	    }
 	  }, {
 	    key: 'getBinded',
@@ -719,52 +821,40 @@
 	  }, {
 	    key: 'getBindedIncursion',
 	    value: function getBindedIncursion(rune, binded, callback) {
-	      if (rune.HasBinded != null) {
+	      if (typeof rune.HasBinded != "undefined") {
 	        //has binded stuff, find it recursively
 	        for (var i = 0; i < rune.HasBinded.length; i++) {
-	          this.getBindedIncursion(rune.HasBinded[i]);
-	          binded.push(rune.HasBinded[i]);
+	          this.getBindedIncursion(rune.HasBinded[i], binded, callback);
 	        }
+	        binded.push(rune);
+	      } else {
+	        binded.push(rune);
 	      }
-	      binded.push(rune);
 	      callback(rune);
 	    }
 	  }, {
 	    key: 'removeDeadChalklings',
 	    value: function removeDeadChalklings() {
-	      var chalklings = this.Chalklings;
-	      var _iteratorNormalCompletion = true;
-	      var _didIteratorError = false;
-	      var _iteratorError = undefined;
-
-	      try {
-	        for (var _iterator = chalklings[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
-	          var chalkling = _step.value;
-
-	          if (chalkling.CurrentAction == "DEATH") {
-	            this.Contains.splice(this.Contains.indexOf(chalkling), 1); //If the chalkling is dead, removes is from board.
+	      var self = this;
+	      this.getBinded(function (rune) {
+	        if (self.isChalkling(rune)) {
+	          if (rune.CurrentAction == "DEATH") {
+	            this.Contains.splice(this.Contains.indexOf(rune), 1); //If the chalkling is dead, removes is from board.
 	          }
 	        }
-	      } catch (err) {
-	        _didIteratorError = true;
-	        _iteratorError = err;
-	      } finally {
-	        try {
-	          if (!_iteratorNormalCompletion && _iterator.return) {
-	            _iterator.return();
-	          }
-	        } finally {
-	          if (_didIteratorError) {
-	            throw _iteratorError;
-	          }
-	        }
-	      }
+	      });
 	    }
 	  }, {
 	    key: 'updateChalklingView',
 	    value: function updateChalklingView() {
 	      //Updates what each chalkling can see.
-	      var chalklings = this.Chalklings;
+	      var chalklings = [];
+	      var self = this;
+	      this.getBinded(function (rune) {
+	        if (self.isChalkling(rune)) {
+	          chalklings.push(rune);
+	        }
+	      });
 	      for (var j = 0; j < chalklings.length; j++) {
 	        for (var k = 0; k < chalklings.length; k++) {
 	          var currentDistance = coord.Distance(chalklings[j].Position, chalklings[k].Position);
@@ -777,151 +867,99 @@
 	  }, {
 	    key: 'updateHitboxes',
 	    value: function updateHitboxes() {
-	      var _this = this;
-
 	      var runes = this.getBinded();
 	      var P = SAT.Polygon; //Shortening for easier typing
 	      var C = SAT.Circle;
 	      var V = SAT.Vector;
 	      var B = SAT.Box;
-
-	      var _loop = function _loop(i) {
-	        var _loop2 = function _loop2(j) {
+	      for (var i = 0; i < runes.length; i++) {
+	        for (var j = 0; j < runes.length; j++) {
 	          if (i == j) {
-	            //Don't want to compare to outselves.
-	            return 'continue';
+	            //Don't want to compare to ourselves.
+	            continue;
 	          }
 	          var response = new SAT.Response();
 	          var entity1 = runes[i];
 	          var entity2 = runes[j];
+	          response.clear();
+	          var BOUNCE = 1.1;
 	          if (entity1.constructor.name == "Circle" || entity2.constructor.name == "Circle") {
 	            //One's a circle
-	            if (entity1.constructor.name == "Circle" && entity2.constructor.name == "Circle") {
-	              (function () {
-	                //Both circles
-	                var x1 = entity1.X;
-	                var y1 = entity1.Y;
-	                var x2 = entity2.X;
-	                var y2 = entity2.Y;
-	                SAT.testCircleCircle(new C(new V(x1, y1), entity1.Radius), new C(new V(x2, y2), entity2.Radius), response);
-	                var smallerCircle = entity1.Radius >= entity2.Radius ? entity2 : entity1; //Determines smaller circle
-	                _this.getBinded(function (rune) {
-	                  //Finds the smaller circle, removes it.
-	                  if (rune.HasBinded != null) {
-	                    for (var k = 0; i < rune.HasBinded.length; k++) {
-	                      if (rune.HasBinded[k].ID == smallerCircle.ID) {
-	                        rune.HasBinded.splice(k, 1);
-	                      }
-	                    }
-	                  }
-	                });
-	              })();
-	            } else if (entity1.Name != null) {
+	            if (entity1.constructor.name == "Circle" && entity2.constructor.name == "Circle") {//Both circles
+
+	            } else if (this.isChalkling(entity1)) {
 	              //1 is chalkling, 2 is circle
-	              var _x2 = entity1.Position.X;
-	              var _y = entity1.Position.Y;
-	              var _x3 = entity2.X;
-	              var _y2 = entity2.Y;
-	              if (SAT.testPolygonCircle(new B(new V(_x2, _y), 100, 100).toPolygon(), new C(new V(_x3, _y2), entity2.Radius, response))) {
-	                console.log("collision!");
-	                _this.getBinded(function (rune) {
-	                  if (rune.ID == entity1.ID) {
-	                    rune.Position.X -= response.overlapV.x;
-	                    rune.Position.Y -= response.overlapV.y;
-	                  }
-	                });
+	              if (SAT.testPolygonPolygon(new B(new V(entity1.TopLeft.X, entity1.TopLeft.Y), 100, 100).toPolygon(), entity2.toSATPolygon(), response)) {
+
+	                entity1.Position.X -= response.overlapV.x + 1 * BOUNCE;
+	                entity1.Position.Y -= response.overlapV.y + 1 * BOUNCE;
+	                //Stop the chalkling from walking, so it doesn't get stuck there.
+	                entity1.override();
 	              }
-	            } else if (entity2.Name != null) {
+	            } else if (this.isChalkling(entity2)) {
 	              //2 is chalkling, 1 is circle
-	              var _x4 = entity1.X;
-	              var _y3 = entity1.Y;
-	              var _x5 = entity2.Position.X;
-	              var _y4 = entity2.Position.Y;
-	              if (SAT.testPolygonCircle(new B(new V(_x5, _y4), 100, 100).toPolygon(), new C(new V(_x4, _y3), entity1.Radius), response)) {
-	                ;
-	                _this.getBinded(function (rune) {
-	                  if (rune.ID == entity2.ID) {
-	                    rune.Position.X -= response.overlapV.x;
-	                    rune.Position.Y -= response.overlapV.y;
-	                  }
-	                });
+	              if (SAT.testPolygonPolygon(new B(new V(entity2.TopLeft.X, entity2.TopLeft.Y), 100, 100).toPolygon(), entity1.toSATPolygon(), response)) {
+	                entity2.Position.X -= response.overlapV.x + 1 * BOUNCE;
+	                entity2.Position.Y -= response.overlapV.y + 1 * BOUNCE;
+
+	                entity2.override();
 	              }
 	            } else {//It's a circle and something else, do nothing
 
 	            }
-	          } else if (entity1.Name != null && entity2.Name != null) {
+	          } else if (this.isChalkling(entity1) && this.isChalkling(entity2)) {
 	            //Both are chalklings
-	            var _x6 = entity1.Position.X;
-	            var _y5 = entity1.Position.Y;
-	            var _x7 = entity2.Position.X;
-	            var _y6 = entity2.Position.Y;
 	            //Create a bounding box around chalkling
-	            var firstChalklingBox = new B(new V(_x6, _y5), 100, 100).toPolygon();
-	            var secondChalklingBox = new B(new V(_x7, _y6), 100, 100).toPolygon();
+	            var firstChalklingBox = new B(new V(entity1.TopLeft.X, entity1.TopLeft.Y), 100, 100).toPolygon();
+	            var secondChalklingBox = new B(new V(entity2.TopLeft.X, entity2.TopLeft.Y), 100, 100).toPolygon();
 	            var collided = SAT.testPolygonPolygon(firstChalklingBox, secondChalklingBox, response);
 	            if (collided) {
-	              (function () {
-	                var collidedVector = response.overlapV.scale(0.5); //How much they overlap
-	                _this.getBinded(function (rune) {
-	                  if (entity1.ID == rune.ID) {
-	                    rune.Position.X -= collidedVector.x;
-	                    rune.Position.Y -= collidedVector.y;
-	                  }
-	                });
-	                _this.getBinded(function (rune) {
-	                  if (entity2.ID == rune.ID) {
-	                    rune.Position.X += collidedVector.x;
-	                    rune.Position.Y += collidedVector.y;
-	                  }
-	                });
-	              })();
+	              var collidedVector = response.overlapV.scale(0.6); //How much they overlap
+	              entity1.Position.X -= collidedVector.x;
+	              entity1.Position.Y -= collidedVector.y;
+	              entity2.Position.X += collidedVector.x;
+	              entity2.Position.Y += collidedVector.y;
 	            }
 	          }
-	        };
-
-	        for (var j = 0; j < runes.length; j++) {
-	          var _ret2 = _loop2(j);
-
-	          if (_ret2 === 'continue') continue;
 	        }
-	      };
-
-	      for (var i = 0; i < runes.length; i++) {
-	        _loop(i);
 	      }
 	    }
 	  }, {
-	    key: 'updateChalklingTargetPositions',
-	    value: function updateChalklingTargetPositions() {
-	      var chalklings = this.Chalklings;
-	      for (var i = 0; i < chalklings.length; i++) {
-	        for (var j = 0; j < chalklings.length; j++) {
-	          if (chalklings[i].Target.ID == chalklings[j].ID) {
-	            chalklings[i].Target.Position = chalklings[j].Position;
-	          } else if (chalklings[j].Target.ID == chalklings[i].ID) {
-	            chalklings[j].Target.Position = chalklings[i].Position;
+	    key: 'selectChalklingAtPoint',
+	    value: function selectChalklingAtPoint(point) {
+	      var V = SAT.Vector;
+	      var B = SAT.Box;
+	      var vecPoint = new V(point.X, point.Y);
+	      var chalkling = null;
+	      var self = this;
+	      this.getBinded(function (rune) {
+	        if (self.isChalkling(rune)) {
+	          if (SAT.pointInPolygon(vecPoint, new B(new V(rune.TopLeft.X, rune.TopLeft.Y), 100, 100).toPolygon())) {
+	            chalkling = rune;
 	          }
 	        }
+	      });
+	      return chalkling;
+	    }
+	  }, {
+	    key: 'isChalkling',
+	    value: function isChalkling(rune) {
+	      if (rune.prototype instanceof _chalkling2.default) {
+	        return true;
+	      } else {
+	        return false;
 	      }
-	      this.Chalklings = chalklings;
 	    }
 	  }, {
 	    key: 'render',
 	    value: function render() {
-	      this.Chalklings = this.getChalklings();
 	      this.removeDeadChalklings();
 	      this.updateHitboxes();
 	      this.updateChalklingView();
 	      var renderString = '';
-	      for (var i = 0; i < this.Contains.length; i++) {
-	        if (this.Contains[i].constructor.name == "Circle") {
-	          var binded = this.getBinded(function () {}, this.Contains[i]);
-	          for (var j = 0; j < binded.length; j++) {
-	            renderString += binded[j].render();
-	          }
-	        }
-	        renderString += this.Contains[i].render();
-	      }
+	      this.getBinded(function (rune) {
+	        renderString += rune.render();
+	      });
 	      return renderString;
 	    }
 	  }]);
@@ -982,6 +1020,8 @@
 	  }, {
 	    key: 'render',
 	    value: function render() {
+	      var mode = arguments.length <= 0 || arguments[0] === undefined ? "DRAW" : arguments[0];
+
 	      var currentStroke = -1;
 	      var svgPathString = '';
 	      for (var i = 0; i < this.Points.length; i++) {
@@ -993,7 +1033,17 @@
 	          svgPathString += "L" + this.Points[i].X + " " + this.Points[i].Y;
 	        }
 	      }
-	      return '<path stroke="black" fill="none" stroke-width = "1" d="' + svgPathString + '"></path>';
+	      switch (mode) {
+	        case "DRAW":
+	          return '<path stroke="black" fill="none" stroke-width = "1" d="' + svgPathString + '"></path>';
+	          break;
+	        case "PATH":
+	          return '<path stroke="black" stroke-dasharray= "5,5" fill="none" stroke-width = "1" d="' + svgPathString + '"></path>';
+	          break;
+	        default:
+	          return '<path stroke="black" fill="none" stroke-width = "1" d="' + svgPathString + '"></path>';
+
+	      }
 	    }
 	  }]);
 
@@ -1009,7 +1059,7 @@
 	'use strict';
 
 	Object.defineProperty(exports, "__esModule", {
-	  value: true
+		value: true
 	});
 
 	var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
@@ -1030,6 +1080,10 @@
 
 	var _point2 = _interopRequireDefault(_point);
 
+	var _sat = __webpack_require__(10);
+
+	var SAT = _interopRequireWildcard(_sat);
+
 	function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
 
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
@@ -1041,83 +1095,1088 @@
 	function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
 
 	var Circle = function (_Rune) {
-	  _inherits(Circle, _Rune);
+		_inherits(Circle, _Rune);
 
-	  function Circle(Points, ID) {
-	    _classCallCheck(this, Circle);
+		function Circle(Points, ID) {
+			_classCallCheck(this, Circle);
 
-	    var _this = _possibleConstructorReturn(this, Object.getPrototypeOf(Circle).call(this, Points, ID));
+			//Close the points
+			var _this = _possibleConstructorReturn(this, Object.getPrototypeOf(Circle).call(this, Points, ID));
 
-	    _this.X = coord.Centroid(_this.Points).X;
-	    _this.Y = coord.Centroid(_this.Points).Y;
-	    _this.Radius = _this.averageDistanceFromCenter();
-	    _this.HasBinded = [];
-	    return _this;
-	  }
+			_this.Points.push(Points[0]);
+			_this.Position = new _point2.default(coord.Centroid(_this.Points).X, coord.Centroid(_this.Points).Y);
+			_this.Radius = _this.averageDistanceFromCenter();
+			_this.HasBinded = [];
+			return _this;
+		}
 
-	  _createClass(Circle, [{
-	    key: 'averageDistanceFromCenter',
-	    value: function averageDistanceFromCenter() {
-	      var distances = 0;
-	      for (var i = 0; i < this.Points.length; i++) {
-	        distances += coord.Distance(new _point2.default(this.X, this.Y), this.Points[i]);
-	      }
-	      var avgDistance = distances / this.Points.length;
-	      return avgDistance;
-	    }
-	  }, {
-	    key: 'getBinded',
-	    value: function getBinded(object) {
-	      //depth-first search to find all objects of type object
-	      var binded = [];
-	      this.getBindedIncursion(this, object, binded);
-	      return binded;
-	    }
-	  }, {
-	    key: 'getBindedIncursion',
-	    value: function getBindedIncursion(circle, object, binded) {
-	      if (circle.HasBinded.length != 0) {
-	        for (var i = 0; i < circle.HasBinded.length; i++) {
-	          if (typeof object == "undefined" || circle.HasBinded[i].constructor.name == object || circle.HasBinded[i].constructor.name == "Circle") {
-	            binded.push(circle.HasBinded[i]);
-	            this.getBindedIncursion(circle.HasBinded[i]);
-	          } else {}
-	        }
-	      }
-	    }
-	  }, {
-	    key: 'bindRune',
-	    value: function bindRune(rune) {
-	      this.HasBinded.push(rune);
-	    }
-	  }, {
-	    key: 'renderBinded',
-	    value: function renderBinded() {
-	      var renderString = '';
-	      var binded = getBinded(this);
-	      for (var i = 0; i < binded; i++) {
-	        renderString = +binded[i].render();
-	      }
-	      return renderString;
-	    }
-	  }, {
-	    key: 'render',
-	    value: function render() {
-	      //Render functions return svg path strings
-	      var radius = this.Radius;
-	      var r = radius.toString();
-	      return "<path fill='none' stroke='black' strokewidth=3 d='M" + this.X + " " + this.Y + "m" + (-1 * radius).toString() + " 0a" + r + "," + r + " 0 1,0 " + (radius * 2).toString() + ",0" + "a " + r + "," + r + " 0 1,0 " + (radius * -2).toString() + ",0" + "'></path>";
-	      //Circle formula for paths found here: http://stackoverflow.com/questions/5737975/circle-drawing-with-svgs-arc-path/10477334#10477334
-	    }
-	  }]);
+		_createClass(Circle, [{
+			key: 'toSATPolygon',
+			value: function toSATPolygon() {
+				var P = SAT.Polygon; //Shortening for easier typing
+				var V = SAT.Vector;
+				var pointArray = [];
+				for (var i = 0; i < this.Points.length; i++) {
+					pointArray.push(new V(this.Points[i].X, this.Points[i].Y));
+				}
+				var polygon = new P(new V(), pointArray);
+				return polygon;
+			}
+		}, {
+			key: 'averageDistanceFromCenter',
+			value: function averageDistanceFromCenter() {
+				var distances = 0;
+				for (var i = 0; i < this.Points.length; i++) {
+					distances += coord.Distance(new _point2.default(this.Position.X, this.Position.Y), this.Points[i]);
+				}
+				var avgDistance = distances / this.Points.length;
+				return avgDistance;
+			}
+		}, {
+			key: 'moveTo',
+			value: function moveTo(point) {
+				this.Points = coord.TranslateTo(this.Points, point);
+				this.Position = point;
+			}
+		}, {
+			key: 'getBinded',
+			value: function getBinded() {
+				var object = arguments.length <= 0 || arguments[0] === undefined ? "Circle" : arguments[0];
+				//depth-first search to find all objects of type object
+				var binded = [];
+				this.getBindedIncursion(this, object, binded);
+				return binded;
+			}
+		}, {
+			key: 'getBindedIncursion',
+			value: function getBindedIncursion(circle, object, binded) {
+				if (circle.HasBinded.length != 0) {
+					for (var i = 0; i < circle.HasBinded.length; i++) {
+						if (typeof object == "undefined" || circle.HasBinded[i].constructor.name == object || circle.HasBinded[i].constructor.name == "Circle") {
+							binded.push(circle.HasBinded[i]);
+							this.getBindedIncursion(circle.HasBinded[i], object, binded);
+						} else {}
+					}
+				} else {
+					binded.push(circle);
+				}
+			}
+		}, {
+			key: 'bindRune',
+			value: function bindRune(rune) {
+				this.HasBinded.push(rune);
+			}
+		}, {
+			key: 'renderBinded',
+			value: function renderBinded() {
+				var renderString = '';
+				var binded = getBinded(this);
+				for (var i = 0; i < binded; i++) {
+					renderString = +binded[i].render();
+				}
+				return renderString;
+			}
+		}, {
+			key: 'render',
+			value: function render() {
+				//Render functions return svg path strings
+				var radius = this.Radius;
+				var r = radius.toString();
+				//perfectCircle is the perfect circle shown for clarity
+				//Circle formula for paths found here: http://stackoverflow.com/questions/5737975/circle-drawing-with-svgs-arc-path/10477334#10477334
+				var perfectCircle = "<path fill='none' stroke='#af9e9e' strokewidth=3 d='M" + this.Position.X + " " + this.Position.Y + "m" + (-1 * radius).toString() + " 0a" + r + "," + r + " 0 1,0 " + (radius * 2).toString() + ",0" + "a " + r + "," + r + " 0 1,0 " + (radius * -2).toString() + ",0" + "'></path>";
+				var realCircle = new _rune2.default(this.Points).render();
+				return perfectCircle + realCircle;
+			}
+		}]);
 
-	  return Circle;
+		return Circle;
 	}(_rune2.default);
 
 	exports.default = Circle;
 
 /***/ },
 /* 10 */
+/***/ function(module, exports) {
+
+	// Version 0.5.0 - Copyright 2012 - 2015 -  Jim Riecken <jimr@jimr.ca>
+	//
+	// Released under the MIT License - https://github.com/jriecken/sat-js
+	//
+	// A simple library for determining intersections of circles and
+	// polygons using the Separating Axis Theorem.
+	/** @preserve SAT.js - Version 0.5.0 - Copyright 2012 - 2015 - Jim Riecken <jimr@jimr.ca> - released under the MIT License. https://github.com/jriecken/sat-js */
+
+	/*global define: false, module: false*/
+	/*jshint shadow:true, sub:true, forin:true, noarg:true, noempty:true,
+	eqeqeq:true, bitwise:true, strict:true, undef:true,
+	curly:true, browser:true */
+
+	"use strict";
+
+	Object.defineProperty(exports, "__esModule", {
+	  value: true
+	});
+	exports.Vector = Vector;
+	exports.Circle = Circle;
+	exports.Polygon = Polygon;
+	exports.Box = Box;
+	exports.Response = Response;
+	exports.pointInCircle = pointInCircle;
+	exports.pointInPolygon = pointInPolygon;
+	exports.testCircleCircle = testCircleCircle;
+	exports.testPolygonCircle = testPolygonCircle;
+	exports.testCirclePolygon = testCirclePolygon;
+	exports.testPolygonPolygon = testPolygonPolygon;
+	var SAT = {};
+
+	//
+	// ## Vector
+	//
+	// Represents a vector in two dimensions with `x` and `y` properties.
+
+
+	// Create a new Vector, optionally passing in the `x` and `y` coordinates. If
+	// a coordinate is not specified, it will be set to `0`
+	/**
+	* @param {?number=} x The x position.
+	* @param {?number=} y The y position.
+	* @constructor
+	*/
+	function Vector(x, y) {
+	  this['x'] = x || 0;
+	  this['y'] = y || 0;
+	}
+	SAT['Vector'] = Vector;
+	// Alias `Vector` as `V`
+	SAT['V'] = Vector;
+
+	// Copy the values of another Vector into this one.
+	/**
+	* @param {Vector} other The other Vector.
+	* @return {Vector} This for chaining.
+	*/
+	Vector.prototype['copy'] = Vector.prototype.copy = function (other) {
+	  this['x'] = other['x'];
+	  this['y'] = other['y'];
+	  return this;
+	};
+
+	// Create a new vector with the same coordinates as this on.
+	/**
+	* @return {Vector} The new cloned vector
+	*/
+	Vector.prototype['clone'] = Vector.prototype.clone = function () {
+	  return new Vector(this['x'], this['y']);
+	};
+
+	// Change this vector to be perpendicular to what it was before. (Effectively
+	// roatates it 90 degrees in a clockwise direction)
+	/**
+	* @return {Vector} This for chaining.
+	*/
+	Vector.prototype['perp'] = Vector.prototype.perp = function () {
+	  var x = this['x'];
+	  this['x'] = this['y'];
+	  this['y'] = -x;
+	  return this;
+	};
+
+	// Rotate this vector (counter-clockwise) by the specified angle (in radians).
+	/**
+	* @param {number} angle The angle to rotate (in radians)
+	* @return {Vector} This for chaining.
+	*/
+	Vector.prototype['rotate'] = Vector.prototype.rotate = function (angle) {
+	  var x = this['x'];
+	  var y = this['y'];
+	  this['x'] = x * Math.cos(angle) - y * Math.sin(angle);
+	  this['y'] = x * Math.sin(angle) + y * Math.cos(angle);
+	  return this;
+	};
+
+	// Reverse this vector.
+	/**
+	* @return {Vector} This for chaining.
+	*/
+	Vector.prototype['reverse'] = Vector.prototype.reverse = function () {
+	  this['x'] = -this['x'];
+	  this['y'] = -this['y'];
+	  return this;
+	};
+
+	// Normalize this vector.  (make it have length of `1`)
+	/**
+	* @return {Vector} This for chaining.
+	*/
+	Vector.prototype['normalize'] = Vector.prototype.normalize = function () {
+	  var d = this.len();
+	  if (d > 0) {
+	    this['x'] = this['x'] / d;
+	    this['y'] = this['y'] / d;
+	  }
+	  return this;
+	};
+
+	// Add another vector to this one.
+	/**
+	* @param {Vector} other The other Vector.
+	* @return {Vector} This for chaining.
+	*/
+	Vector.prototype['add'] = Vector.prototype.add = function (other) {
+	  this['x'] += other['x'];
+	  this['y'] += other['y'];
+	  return this;
+	};
+
+	// Subtract another vector from this one.
+	/**
+	* @param {Vector} other The other Vector.
+	* @return {Vector} This for chaiing.
+	*/
+	Vector.prototype['sub'] = Vector.prototype.sub = function (other) {
+	  this['x'] -= other['x'];
+	  this['y'] -= other['y'];
+	  return this;
+	};
+
+	// Scale this vector. An independant scaling factor can be provided
+	// for each axis, or a single scaling factor that will scale both `x` and `y`.
+	/**
+	* @param {number} x The scaling factor in the x direction.
+	* @param {?number=} y The scaling factor in the y direction.  If this
+	*   is not specified, the x scaling factor will be used.
+	* @return {Vector} This for chaining.
+	*/
+	Vector.prototype['scale'] = Vector.prototype.scale = function (x, y) {
+	  this['x'] *= x;
+	  this['y'] *= y || x;
+	  return this;
+	};
+
+	// Project this vector on to another vector.
+	/**
+	* @param {Vector} other The vector to project onto.
+	* @return {Vector} This for chaining.
+	*/
+	Vector.prototype['project'] = Vector.prototype.project = function (other) {
+	  var amt = this.dot(other) / other.len2();
+	  this['x'] = amt * other['x'];
+	  this['y'] = amt * other['y'];
+	  return this;
+	};
+
+	// Project this vector onto a vector of unit length. This is slightly more efficient
+	// than `project` when dealing with unit vectors.
+	/**
+	* @param {Vector} other The unit vector to project onto.
+	* @return {Vector} This for chaining.
+	*/
+	Vector.prototype['projectN'] = Vector.prototype.projectN = function (other) {
+	  var amt = this.dot(other);
+	  this['x'] = amt * other['x'];
+	  this['y'] = amt * other['y'];
+	  return this;
+	};
+
+	// Reflect this vector on an arbitrary axis.
+	/**
+	* @param {Vector} axis The vector representing the axis.
+	* @return {Vector} This for chaining.
+	*/
+	Vector.prototype['reflect'] = Vector.prototype.reflect = function (axis) {
+	  var x = this['x'];
+	  var y = this['y'];
+	  this.project(axis).scale(2);
+	  this['x'] -= x;
+	  this['y'] -= y;
+	  return this;
+	};
+
+	// Reflect this vector on an arbitrary axis (represented by a unit vector). This is
+	// slightly more efficient than `reflect` when dealing with an axis that is a unit vector.
+	/**
+	* @param {Vector} axis The unit vector representing the axis.
+	* @return {Vector} This for chaining.
+	*/
+	Vector.prototype['reflectN'] = Vector.prototype.reflectN = function (axis) {
+	  var x = this['x'];
+	  var y = this['y'];
+	  this.projectN(axis).scale(2);
+	  this['x'] -= x;
+	  this['y'] -= y;
+	  return this;
+	};
+
+	// Get the dot product of this vector and another.
+	/**
+	* @param {Vector}  other The vector to dot this one against.
+	* @return {number} The dot product.
+	*/
+	Vector.prototype['dot'] = Vector.prototype.dot = function (other) {
+	  return this['x'] * other['x'] + this['y'] * other['y'];
+	};
+
+	// Get the squared length of this vector.
+	/**
+	* @return {number} The length^2 of this vector.
+	*/
+	Vector.prototype['len2'] = Vector.prototype.len2 = function () {
+	  return this.dot(this);
+	};
+
+	// Get the length of this vector.
+	/**
+	* @return {number} The length of this vector.
+	*/
+	Vector.prototype['len'] = Vector.prototype.len = function () {
+	  return Math.sqrt(this.len2());
+	};
+
+	// ## Circle
+	//
+	// Represents a circle with a position and a radius.
+
+	// Create a new circle, optionally passing in a position and/or radius. If no position
+	// is given, the circle will be at `(0,0)`. If no radius is provided, the circle will
+	// have a radius of `0`.
+	/**
+	* @param {Vector=} pos A vector representing the position of the center of the circle
+	* @param {?number=} r The radius of the circle
+	* @constructor
+	*/
+	function Circle(pos, r) {
+	  this['pos'] = pos || new Vector();
+	  this['r'] = r || 0;
+	}
+	SAT['Circle'] = Circle;
+
+	// Compute the axis-aligned bounding box (AABB) of this Circle.
+	//
+	// Note: Returns a _new_ `Polygon` each time you call this.
+	/**
+	* @return {Polygon} The AABB
+	*/
+	Circle.prototype['getAABB'] = Circle.prototype.getAABB = function () {
+	  var r = this['r'];
+	  var corner = this["pos"].clone().sub(new Vector(r, r));
+	  return new Box(corner, r * 2, r * 2).toPolygon();
+	};
+
+	// ## Polygon
+	//
+	// Represents a *convex* polygon with any number of points (specified in counter-clockwise order)
+	//
+	// Note: Do _not_ manually change the `points`, `angle`, or `offset` properties. Use the
+	// provided setters. Otherwise the calculated properties will not be updated correctly.
+	//
+	// `pos` can be changed directly.
+
+	// Create a new polygon, passing in a position vector, and an array of points (represented
+	// by vectors relative to the position vector). If no position is passed in, the position
+	// of the polygon will be `(0,0)`.
+	/**
+	* @param {Vector=} pos A vector representing the origin of the polygon. (all other
+	*   points are relative to this one)
+	* @param {Array.<Vector>=} points An array of vectors representing the points in the polygon,
+	*   in counter-clockwise order.
+	* @constructor
+	*/
+	function Polygon(pos, points) {
+	  this['pos'] = pos || new Vector();
+	  this['angle'] = 0;
+	  this['offset'] = new Vector();
+	  this.setPoints(points || []);
+	}
+	SAT['Polygon'] = Polygon;
+
+	// Set the points of the polygon.
+	/**
+	* @param {Array.<Vector>=} points An array of vectors representing the points in the polygon,
+	*   in counter-clockwise order.
+	* @return {Polygon} This for chaining.
+	*/
+	Polygon.prototype['setPoints'] = Polygon.prototype.setPoints = function (points) {
+	  // Only re-allocate if this is a new polygon or the number of points has changed.
+	  var lengthChanged = !this['points'] || this['points'].length !== points.length;
+	  if (lengthChanged) {
+	    var i;
+	    var calcPoints = this['calcPoints'] = [];
+	    var edges = this['edges'] = [];
+	    var normals = this['normals'] = [];
+	    // Allocate the vector arrays for the calculated properties
+	    for (i = 0; i < points.length; i++) {
+	      calcPoints.push(new Vector());
+	      edges.push(new Vector());
+	      normals.push(new Vector());
+	    }
+	  }
+	  this['points'] = points;
+	  this._recalc();
+	  return this;
+	};
+
+	// Set the current rotation angle of the polygon.
+	/**
+	* @param {number} angle The current rotation angle (in radians).
+	* @return {Polygon} This for chaining.
+	*/
+	Polygon.prototype['setAngle'] = Polygon.prototype.setAngle = function (angle) {
+	  this['angle'] = angle;
+	  this._recalc();
+	  return this;
+	};
+
+	// Set the current offset to apply to the `points` before applying the `angle` rotation.
+	/**
+	* @param {Vector} offset The new offset vector.
+	* @return {Polygon} This for chaining.
+	*/
+	Polygon.prototype['setOffset'] = Polygon.prototype.setOffset = function (offset) {
+	  this['offset'] = offset;
+	  this._recalc();
+	  return this;
+	};
+
+	// Rotates this polygon counter-clockwise around the origin of *its local coordinate system* (i.e. `pos`).
+	//
+	// Note: This changes the **original** points (so any `angle` will be applied on top of this rotation).
+	/**
+	* @param {number} angle The angle to rotate (in radians)
+	* @return {Polygon} This for chaining.
+	*/
+	Polygon.prototype['rotate'] = Polygon.prototype.rotate = function (angle) {
+	  var points = this['points'];
+	  var len = points.length;
+	  for (var i = 0; i < len; i++) {
+	    points[i].rotate(angle);
+	  }
+	  this._recalc();
+	  return this;
+	};
+
+	// Translates the points of this polygon by a specified amount relative to the origin of *its own coordinate
+	// system* (i.e. `pos`).
+	//
+	// This is most useful to change the "center point" of a polygon. If you just want to move the whole polygon, change
+	// the coordinates of `pos`.
+	//
+	// Note: This changes the **original** points (so any `offset` will be applied on top of this translation)
+	/**
+	* @param {number} x The horizontal amount to translate.
+	* @param {number} y The vertical amount to translate.
+	* @return {Polygon} This for chaining.
+	*/
+	Polygon.prototype['translate'] = Polygon.prototype.translate = function (x, y) {
+	  var points = this['points'];
+	  var len = points.length;
+	  for (var i = 0; i < len; i++) {
+	    points[i].x += x;
+	    points[i].y += y;
+	  }
+	  this._recalc();
+	  return this;
+	};
+
+	// Computes the calculated collision polygon. Applies the `angle` and `offset` to the original points then recalculates the
+	// edges and normals of the collision polygon.
+	/**
+	* @return {Polygon} This for chaining.
+	*/
+	Polygon.prototype._recalc = function () {
+	  // Calculated points - this is what is used for underlying collisions and takes into account
+	  // the angle/offset set on the polygon.
+	  var calcPoints = this['calcPoints'];
+	  // The edges here are the direction of the `n`th edge of the polygon, relative to
+	  // the `n`th point. If you want to draw a given edge from the edge value, you must
+	  // first translate to the position of the starting point.
+	  var edges = this['edges'];
+	  // The normals here are the direction of the normal for the `n`th edge of the polygon, relative
+	  // to the position of the `n`th point. If you want to draw an edge normal, you must first
+	  // translate to the position of the starting point.
+	  var normals = this['normals'];
+	  // Copy the original points array and apply the offset/angle
+	  var points = this['points'];
+	  var offset = this['offset'];
+	  var angle = this['angle'];
+	  var len = points.length;
+	  var i;
+	  for (i = 0; i < len; i++) {
+	    var calcPoint = calcPoints[i].copy(points[i]);
+	    calcPoint.x += offset.x;
+	    calcPoint.y += offset.y;
+	    if (angle !== 0) {
+	      calcPoint.rotate(angle);
+	    }
+	  }
+	  // Calculate the edges/normals
+	  for (i = 0; i < len; i++) {
+	    var p1 = calcPoints[i];
+	    var p2 = i < len - 1 ? calcPoints[i + 1] : calcPoints[0];
+	    var e = edges[i].copy(p2).sub(p1);
+	    normals[i].copy(e).perp().normalize();
+	  }
+	  return this;
+	};
+
+	// Compute the axis-aligned bounding box. Any current state
+	// (translations/rotations) will be applied before constructing the AABB.
+	//
+	// Note: Returns a _new_ `Polygon` each time you call this.
+	/**
+	* @return {Polygon} The AABB
+	*/
+	Polygon.prototype["getAABB"] = Polygon.prototype.getAABB = function () {
+	  var points = this["calcPoints"];
+	  var len = points.length;
+	  var xMin = points[0]["x"];
+	  var yMin = points[0]["y"];
+	  var xMax = points[0]["x"];
+	  var yMax = points[0]["y"];
+	  for (var i = 1; i < len; i++) {
+	    var point = points[i];
+	    if (point["x"] < xMin) {
+	      xMin = point["x"];
+	    } else if (point["x"] > xMax) {
+	      xMax = point["x"];
+	    }
+	    if (point["y"] < yMin) {
+	      yMin = point["y"];
+	    } else if (point["y"] > yMax) {
+	      yMax = point["y"];
+	    }
+	  }
+	  return new Box(this["pos"].clone().add(new Vector(xMin, yMin)), xMax - xMin, yMax - yMin).toPolygon();
+	};
+
+	// ## Box
+	//
+	// Represents an axis-aligned box, with a width and height.
+
+
+	// Create a new box, with the specified position, width, and height. If no position
+	// is given, the position will be `(0,0)`. If no width or height are given, they will
+	// be set to `0`.
+	/**
+	* @param {Vector=} pos A vector representing the top-left of the box.
+	* @param {?number=} w The width of the box.
+	* @param {?number=} h The height of the box.
+	* @constructor
+	*/
+	function Box(pos, w, h) {
+	  this['pos'] = pos || new Vector();
+	  this['w'] = w || 0;
+	  this['h'] = h || 0;
+	}
+	SAT['Box'] = Box;
+
+	// Returns a polygon whose edges are the same as this box.
+	/**
+	* @return {Polygon} A new Polygon that represents this box.
+	*/
+	Box.prototype['toPolygon'] = Box.prototype.toPolygon = function () {
+	  var pos = this['pos'];
+	  var w = this['w'];
+	  var h = this['h'];
+	  return new Polygon(new Vector(pos['x'], pos['y']), [new Vector(), new Vector(w, 0), new Vector(w, h), new Vector(0, h)]);
+	};
+
+	// ## Response
+	//
+	// An object representing the result of an intersection. Contains:
+	//  - The two objects participating in the intersection
+	//  - The vector representing the minimum change necessary to extract the first object
+	//    from the second one (as well as a unit vector in that direction and the magnitude
+	//    of the overlap)
+	//  - Whether the first object is entirely inside the second, and vice versa.
+	/**
+	* @constructor
+	*/
+	function Response() {
+	  this['a'] = null;
+	  this['b'] = null;
+	  this['overlapN'] = new Vector();
+	  this['overlapV'] = new Vector();
+	  this.clear();
+	}
+	SAT['Response'] = Response;
+
+	// Set some values of the response back to their defaults.  Call this between tests if
+	// you are going to reuse a single Response object for multiple intersection tests (recommented
+	// as it will avoid allcating extra memory)
+	/**
+	* @return {Response} This for chaining
+	*/
+	Response.prototype['clear'] = Response.prototype.clear = function () {
+	  this['aInB'] = true;
+	  this['bInA'] = true;
+	  this['overlap'] = Number.MAX_VALUE;
+	  return this;
+	};
+
+	// ## Object Pools
+
+	// A pool of `Vector` objects that are used in calculations to avoid
+	// allocating memory.
+	/**
+	* @type {Array.<Vector>}
+	*/
+	var T_VECTORS = [];
+	for (var i = 0; i < 10; i++) {
+	  T_VECTORS.push(new Vector());
+	}
+
+	// A pool of arrays of numbers used in calculations to avoid allocating
+	// memory.
+	/**
+	* @type {Array.<Array.<number>>}
+	*/
+	var T_ARRAYS = [];
+	for (var i = 0; i < 5; i++) {
+	  T_ARRAYS.push([]);
+	}
+
+	// Temporary response used for polygon hit detection.
+	/**
+	* @type {Response}
+	*/
+	var T_RESPONSE = new Response();
+
+	// Unit square polygon used for polygon hit detection.
+	/**
+	* @type {Polygon}
+	*/
+	var UNIT_SQUARE = new Box(new Vector(), 1, 1).toPolygon();
+
+	// ## Helper Functions
+
+	// Flattens the specified array of points onto a unit vector axis,
+	// resulting in a one dimensional range of the minimum and
+	// maximum value on that axis.
+	/**
+	* @param {Array.<Vector>} points The points to flatten.
+	* @param {Vector} normal The unit vector axis to flatten on.
+	* @param {Array.<number>} result An array.  After calling this function,
+	*   result[0] will be the minimum value,
+	*   result[1] will be the maximum value.
+	*/
+	function flattenPointsOn(points, normal, result) {
+	  var min = Number.MAX_VALUE;
+	  var max = -Number.MAX_VALUE;
+	  var len = points.length;
+	  for (var i = 0; i < len; i++) {
+	    // The magnitude of the projection of the point onto the normal
+	    var dot = points[i].dot(normal);
+	    if (dot < min) {
+	      min = dot;
+	    }
+	    if (dot > max) {
+	      max = dot;
+	    }
+	  }
+	  result[0] = min;result[1] = max;
+	}
+
+	// Check whether two convex polygons are separated by the specified
+	// axis (must be a unit vector).
+	/**
+	* @param {Vector} aPos The position of the first polygon.
+	* @param {Vector} bPos The position of the second polygon.
+	* @param {Array.<Vector>} aPoints The points in the first polygon.
+	* @param {Array.<Vector>} bPoints The points in the second polygon.
+	* @param {Vector} axis The axis (unit sized) to test against.  The points of both polygons
+	*   will be projected onto this axis.
+	* @param {Response=} response A Response object (optional) which will be populated
+	*   if the axis is not a separating axis.
+	* @return {boolean} true if it is a separating axis, false otherwise.  If false,
+	*   and a response is passed in, information about how much overlap and
+	*   the direction of the overlap will be populated.
+	*/
+	function isSeparatingAxis(aPos, bPos, aPoints, bPoints, axis, response) {
+	  var rangeA = T_ARRAYS.pop();
+	  var rangeB = T_ARRAYS.pop();
+	  // The magnitude of the offset between the two polygons
+	  var offsetV = T_VECTORS.pop().copy(bPos).sub(aPos);
+	  var projectedOffset = offsetV.dot(axis);
+	  // Project the polygons onto the axis.
+	  flattenPointsOn(aPoints, axis, rangeA);
+	  flattenPointsOn(bPoints, axis, rangeB);
+	  // Move B's range to its position relative to A.
+	  rangeB[0] += projectedOffset;
+	  rangeB[1] += projectedOffset;
+	  // Check if there is a gap. If there is, this is a separating axis and we can stop
+	  if (rangeA[0] > rangeB[1] || rangeB[0] > rangeA[1]) {
+	    T_VECTORS.push(offsetV);
+	    T_ARRAYS.push(rangeA);
+	    T_ARRAYS.push(rangeB);
+	    return true;
+	  }
+	  // This is not a separating axis. If we're calculating a response, calculate the overlap.
+	  if (response) {
+	    var overlap = 0;
+	    // A starts further left than B
+	    if (rangeA[0] < rangeB[0]) {
+	      response['aInB'] = false;
+	      // A ends before B does. We have to pull A out of B
+	      if (rangeA[1] < rangeB[1]) {
+	        overlap = rangeA[1] - rangeB[0];
+	        response['bInA'] = false;
+	        // B is fully inside A.  Pick the shortest way out.
+	      } else {
+	        var option1 = rangeA[1] - rangeB[0];
+	        var option2 = rangeB[1] - rangeA[0];
+	        overlap = option1 < option2 ? option1 : -option2;
+	      }
+	      // B starts further left than A
+	    } else {
+	      response['bInA'] = false;
+	      // B ends before A ends. We have to push A out of B
+	      if (rangeA[1] > rangeB[1]) {
+	        overlap = rangeA[0] - rangeB[1];
+	        response['aInB'] = false;
+	        // A is fully inside B.  Pick the shortest way out.
+	      } else {
+	        var option1 = rangeA[1] - rangeB[0];
+	        var option2 = rangeB[1] - rangeA[0];
+	        overlap = option1 < option2 ? option1 : -option2;
+	      }
+	    }
+	    // If this is the smallest amount of overlap we've seen so far, set it as the minimum overlap.
+	    var absOverlap = Math.abs(overlap);
+	    if (absOverlap < response['overlap']) {
+	      response['overlap'] = absOverlap;
+	      response['overlapN'].copy(axis);
+	      if (overlap < 0) {
+	        response['overlapN'].reverse();
+	      }
+	    }
+	  }
+	  T_VECTORS.push(offsetV);
+	  T_ARRAYS.push(rangeA);
+	  T_ARRAYS.push(rangeB);
+	  return false;
+	}
+
+	// Calculates which Vornoi region a point is on a line segment.
+	// It is assumed that both the line and the point are relative to `(0,0)`
+	//
+	//            |       (0)      |
+	//     (-1)  [S]--------------[E]  (1)
+	//            |       (0)      |
+	/**
+	* @param {Vector} line The line segment.
+	* @param {Vector} point The point.
+	* @return  {number} LEFT_VORNOI_REGION (-1) if it is the left region,
+	*          MIDDLE_VORNOI_REGION (0) if it is the middle region,
+	*          RIGHT_VORNOI_REGION (1) if it is the right region.
+	*/
+	function vornoiRegion(line, point) {
+	  var len2 = line.len2();
+	  var dp = point.dot(line);
+	  // If the point is beyond the start of the line, it is in the
+	  // left vornoi region.
+	  if (dp < 0) {
+	    return LEFT_VORNOI_REGION;
+	  }
+	  // If the point is beyond the end of the line, it is in the
+	  // right vornoi region.
+	  else if (dp > len2) {
+	      return RIGHT_VORNOI_REGION;
+	    }
+	    // Otherwise, it's in the middle one.
+	    else {
+	        return MIDDLE_VORNOI_REGION;
+	      }
+	}
+	// Constants for Vornoi regions
+	/**
+	* @const
+	*/
+	var LEFT_VORNOI_REGION = -1;
+	/**
+	* @const
+	*/
+	var MIDDLE_VORNOI_REGION = 0;
+	/**
+	* @const
+	*/
+	var RIGHT_VORNOI_REGION = 1;
+
+	// ## Collision Tests
+
+	// Check if a point is inside a circle.
+	/**
+	* @param {Vector} p The point to test.
+	* @param {Circle} c The circle to test.
+	* @return {boolean} true if the point is inside the circle, false if it is not.
+	*/
+	function pointInCircle(p, c) {
+	  var differenceV = T_VECTORS.pop().copy(p).sub(c['pos']);
+	  var radiusSq = c['r'] * c['r'];
+	  var distanceSq = differenceV.len2();
+	  T_VECTORS.push(differenceV);
+	  // If the distance between is smaller than the radius then the point is inside the circle.
+	  return distanceSq <= radiusSq;
+	}
+	SAT['pointInCircle'] = pointInCircle;
+
+	// Check if a point is inside a convex polygon.
+	/**
+	* @param {Vector} p The point to test.
+	* @param {Polygon} poly The polygon to test.
+	* @return {boolean} true if the point is inside the polygon, false if it is not.
+	*/
+	function pointInPolygon(p, poly) {
+	  UNIT_SQUARE['pos'].copy(p);
+	  T_RESPONSE.clear();
+	  var result = testPolygonPolygon(UNIT_SQUARE, poly, T_RESPONSE);
+	  if (result) {
+	    result = T_RESPONSE['aInB'];
+	  }
+	  return result;
+	}
+	SAT['pointInPolygon'] = pointInPolygon;
+
+	// Check if two circles collide.
+	/**
+	* @param {Circle} a The first circle.
+	* @param {Circle} b The second circle.
+	* @param {Response=} response Response object (optional) that will be populated if
+	*   the circles intersect.
+	* @return {boolean} true if the circles intersect, false if they don't.
+	*/
+	function testCircleCircle(a, b, response) {
+	  // Check if the distance between the centers of the two
+	  // circles is greater than their combined radius.
+	  var differenceV = T_VECTORS.pop().copy(b['pos']).sub(a['pos']);
+	  var totalRadius = a['r'] + b['r'];
+	  var totalRadiusSq = totalRadius * totalRadius;
+	  var distanceSq = differenceV.len2();
+	  // If the distance is bigger than the combined radius, they don't intersect.
+	  if (distanceSq > totalRadiusSq) {
+	    T_VECTORS.push(differenceV);
+	    return false;
+	  }
+	  // They intersect.  If we're calculating a response, calculate the overlap.
+	  if (response) {
+	    var dist = Math.sqrt(distanceSq);
+	    response['a'] = a;
+	    response['b'] = b;
+	    response['overlap'] = totalRadius - dist;
+	    response['overlapN'].copy(differenceV.normalize());
+	    response['overlapV'].copy(differenceV).scale(response['overlap']);
+	    response['aInB'] = a['r'] <= b['r'] && dist <= b['r'] - a['r'];
+	    response['bInA'] = b['r'] <= a['r'] && dist <= a['r'] - b['r'];
+	  }
+	  T_VECTORS.push(differenceV);
+	  return true;
+	}
+	SAT['testCircleCircle'] = testCircleCircle;
+
+	// Check if a polygon and a circle collide.
+	/**
+	* @param {Polygon} polygon The polygon.
+	* @param {Circle} circle The circle.
+	* @param {Response=} response Response object (optional) that will be populated if
+	*   they interset.
+	* @return {boolean} true if they intersect, false if they don't.
+	*/
+	function testPolygonCircle(polygon, circle, response) {
+	  // Get the position of the circle relative to the polygon.
+	  var circlePos = T_VECTORS.pop().copy(circle['pos']).sub(polygon['pos']);
+	  var radius = circle['r'];
+	  var radius2 = radius * radius;
+	  var points = polygon['calcPoints'];
+	  var len = points.length;
+	  var edge = T_VECTORS.pop();
+	  var point = T_VECTORS.pop();
+
+	  // For each edge in the polygon:
+	  for (var i = 0; i < len; i++) {
+	    var next = i === len - 1 ? 0 : i + 1;
+	    var prev = i === 0 ? len - 1 : i - 1;
+	    var overlap = 0;
+	    var overlapN = null;
+
+	    // Get the edge.
+	    edge.copy(polygon['edges'][i]);
+	    // Calculate the center of the circle relative to the starting point of the edge.
+	    point.copy(circlePos).sub(points[i]);
+
+	    // If the distance between the center of the circle and the point
+	    // is bigger than the radius, the polygon is definitely not fully in
+	    // the circle.
+	    if (response && point.len2() > radius2) {
+	      response['aInB'] = false;
+	    }
+
+	    // Calculate which Vornoi region the center of the circle is in.
+	    var region = vornoiRegion(edge, point);
+	    // If it's the left region:
+	    if (region === LEFT_VORNOI_REGION) {
+	      // We need to make sure we're in the RIGHT_VORNOI_REGION of the previous edge.
+	      edge.copy(polygon['edges'][prev]);
+	      // Calculate the center of the circle relative the starting point of the previous edge
+	      var point2 = T_VECTORS.pop().copy(circlePos).sub(points[prev]);
+	      region = vornoiRegion(edge, point2);
+	      if (region === RIGHT_VORNOI_REGION) {
+	        // It's in the region we want.  Check if the circle intersects the point.
+	        var dist = point.len();
+	        if (dist > radius) {
+	          // No intersection
+	          T_VECTORS.push(circlePos);
+	          T_VECTORS.push(edge);
+	          T_VECTORS.push(point);
+	          T_VECTORS.push(point2);
+	          return false;
+	        } else if (response) {
+	          // It intersects, calculate the overlap.
+	          response['bInA'] = false;
+	          overlapN = point.normalize();
+	          overlap = radius - dist;
+	        }
+	      }
+	      T_VECTORS.push(point2);
+	      // If it's the right region:
+	    } else if (region === RIGHT_VORNOI_REGION) {
+	      // We need to make sure we're in the left region on the next edge
+	      edge.copy(polygon['edges'][next]);
+	      // Calculate the center of the circle relative to the starting point of the next edge.
+	      point.copy(circlePos).sub(points[next]);
+	      region = vornoiRegion(edge, point);
+	      if (region === LEFT_VORNOI_REGION) {
+	        // It's in the region we want.  Check if the circle intersects the point.
+	        var dist = point.len();
+	        if (dist > radius) {
+	          // No intersection
+	          T_VECTORS.push(circlePos);
+	          T_VECTORS.push(edge);
+	          T_VECTORS.push(point);
+	          return false;
+	        } else if (response) {
+	          // It intersects, calculate the overlap.
+	          response['bInA'] = false;
+	          overlapN = point.normalize();
+	          overlap = radius - dist;
+	        }
+	      }
+	      // Otherwise, it's the middle region:
+	    } else {
+	      // Need to check if the circle is intersecting the edge,
+	      // Change the edge into its "edge normal".
+	      var normal = edge.perp().normalize();
+	      // Find the perpendicular distance between the center of the
+	      // circle and the edge.
+	      var dist = point.dot(normal);
+	      var distAbs = Math.abs(dist);
+	      // If the circle is on the outside of the edge, there is no intersection.
+	      if (dist > 0 && distAbs > radius) {
+	        // No intersection
+	        T_VECTORS.push(circlePos);
+	        T_VECTORS.push(normal);
+	        T_VECTORS.push(point);
+	        return false;
+	      } else if (response) {
+	        // It intersects, calculate the overlap.
+	        overlapN = normal;
+	        overlap = radius - dist;
+	        // If the center of the circle is on the outside of the edge, or part of the
+	        // circle is on the outside, the circle is not fully inside the polygon.
+	        if (dist >= 0 || overlap < 2 * radius) {
+	          response['bInA'] = false;
+	        }
+	      }
+	    }
+
+	    // If this is the smallest overlap we've seen, keep it.
+	    // (overlapN may be null if the circle was in the wrong Vornoi region).
+	    if (overlapN && response && Math.abs(overlap) < Math.abs(response['overlap'])) {
+	      response['overlap'] = overlap;
+	      response['overlapN'].copy(overlapN);
+	    }
+	  }
+
+	  // Calculate the final overlap vector - based on the smallest overlap.
+	  if (response) {
+	    response['a'] = polygon;
+	    response['b'] = circle;
+	    response['overlapV'].copy(response['overlapN']).scale(response['overlap']);
+	  }
+	  T_VECTORS.push(circlePos);
+	  T_VECTORS.push(edge);
+	  T_VECTORS.push(point);
+	  return true;
+	}
+	SAT['testPolygonCircle'] = testPolygonCircle;
+
+	// Check if a circle and a polygon collide.
+	//
+	// **NOTE:** This is slightly less efficient than polygonCircle as it just
+	// runs polygonCircle and reverses everything at the end.
+	/**
+	* @param {Circle} circle The circle.
+	* @param {Polygon} polygon The polygon.
+	* @param {Response=} response Response object (optional) that will be populated if
+	*   they interset.
+	* @return {boolean} true if they intersect, false if they don't.
+	*/
+	function testCirclePolygon(circle, polygon, response) {
+	  // Test the polygon against the circle.
+	  var result = testPolygonCircle(polygon, circle, response);
+	  if (result && response) {
+	    // Swap A and B in the response.
+	    var a = response['a'];
+	    var aInB = response['aInB'];
+	    response['overlapN'].reverse();
+	    response['overlapV'].reverse();
+	    response['a'] = response['b'];
+	    response['b'] = a;
+	    response['aInB'] = response['bInA'];
+	    response['bInA'] = aInB;
+	  }
+	  return result;
+	}
+	SAT['testCirclePolygon'] = testCirclePolygon;
+
+	// Checks whether polygons collide.
+	/**
+	* @param {Polygon} a The first polygon.
+	* @param {Polygon} b The second polygon.
+	* @param {Response=} response Response object (optional) that will be populated if
+	*   they interset.
+	* @return {boolean} true if they intersect, false if they don't.
+	*/
+	function testPolygonPolygon(a, b, response) {
+	  var aPoints = a['calcPoints'];
+	  var aLen = aPoints.length;
+	  var bPoints = b['calcPoints'];
+	  var bLen = bPoints.length;
+	  // If any of the edge normals of A is a separating axis, no intersection.
+	  for (var i = 0; i < aLen; i++) {
+	    if (isSeparatingAxis(a['pos'], b['pos'], aPoints, bPoints, a['normals'][i], response)) {
+	      return false;
+	    }
+	  }
+	  // If any of the edge normals of B is a separating axis, no intersection.
+	  for (var i = 0; i < bLen; i++) {
+	    if (isSeparatingAxis(a['pos'], b['pos'], aPoints, bPoints, b['normals'][i], response)) {
+	      return false;
+	    }
+	  }
+	  // Since none of the edge normals of A or B are a separating axis, there is an intersection
+	  // and we've already calculated the smallest overlap (in isSeparatingAxis).  Calculate the
+	  // final overlap vector.
+	  if (response) {
+	    response['a'] = a;
+	    response['b'] = b;
+	    response['overlapV'] = response['overlapN'].scale(response['overlap']);
+	  }
+	  return true;
+	}
+	SAT['testPolygonPolygon'] = testPolygonPolygon;
+
+/***/ },
+/* 11 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -1125,9 +2184,9 @@
 	Object.defineProperty(exports, "__esModule", {
 	  value: true
 	});
-	exports.EnemyTestling = exports.Testling = undefined;
+	exports.Testling = undefined;
 
-	var _chalkling = __webpack_require__(11);
+	var _chalkling = __webpack_require__(12);
 
 	var _chalkling2 = _interopRequireDefault(_chalkling);
 
@@ -1135,21 +2194,32 @@
 
 	var _attributeSet2 = _interopRequireDefault(_attributeSet);
 
-	var _chalklingCommand = __webpack_require__(12);
-
-	var _chalklingCommand2 = _interopRequireDefault(_chalklingCommand);
-
 	var _point = __webpack_require__(4);
 
 	var _point2 = _interopRequireDefault(_point);
 
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-	var Testling = exports.Testling = new _chalkling2.default("Testling", 1, "blue", new _point2.default(300, 300), new _attributeSet2.default(100, 1, 1000, 600, 300, 50));
-	var EnemyTestling = exports.EnemyTestling = new _chalkling2.default("Enemy Testling", 2, "red", new _point2.default(500, 300), new _attributeSet2.default(100, 1, 1000, 600, 300, 200));
+	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+	function _possibleConstructorReturn(self, call) { if (!self) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return call && (typeof call === "object" || typeof call === "function") ? call : self; }
+
+	function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
+
+	var Testling = exports.Testling = function (_Chalkling) {
+	  _inherits(Testling, _Chalkling);
+
+	  function Testling(id, player, position) {
+	    _classCallCheck(this, Testling);
+
+	    return _possibleConstructorReturn(this, Object.getPrototypeOf(Testling).call(this, "Testling", id, player, position, new _attributeSet2.default(100, 10, 1000, 3000, 200, 100)));
+	  }
+
+	  return Testling;
+	}(_chalkling2.default);
 
 /***/ },
-/* 11 */
+/* 12 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -1164,9 +2234,9 @@
 
 	var coord = _interopRequireWildcard(_coord);
 
-	var _chalklingCommand = __webpack_require__(12);
+	var _point = __webpack_require__(4);
 
-	var _chalklingCommand2 = _interopRequireDefault(_chalklingCommand);
+	var _point2 = _interopRequireDefault(_point);
 
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
@@ -1183,13 +2253,13 @@
 	    this.ID = id;
 	    this.Position = position;
 	    this.Attributes = attributeSet;
-	    this.Animations = animationData;
 	    this.CurrentAction = "IDLE";
 	    this.Frame = 0;
 	    this.Sees = [];
 	    this.AnimationEnd = -1;
-	    this.Queue = [];
 	    this.Target = null;
+	    this.Path = [];
+	    this.TopLeft = new _point2.default(this.Position.X - 50, this.Position.Y - 50);
 	  }
 
 	  _createClass(Chalkling, [{
@@ -1222,49 +2292,17 @@
 	      return pathToAnimation;
 	    }
 	  }, {
-	    key: 'makeInterval',
-	    value: function makeInterval(time) {
-	      return new Promise(function (resolve, reject) {
-	        setTimeout(resolve, time);
-	      });
-	    }
-	  }, {
-	    key: 'doCommand',
-	    value: function doCommand(command) {
-	      var self = this;
-	      this.makeInterval(command.Time).then(function () {
-	        command.Action(self);
-	        if (!command.EndCondition(self)) {
-	          self.doCommand(command);
-	        } else {}
-	      });
-	    }
-	  }, {
 	    key: 'moveTo',
 	    value: function moveTo(position) {
 	      this.CurrentAction = "WALK";
-	      this.doCommand(new _chalklingCommand2.default(function (chalkling) {
-	        //yay, geometry! Here we go again....
-	        var me = chalkling.Position;
-	        var moveDistance = chalkling.Attributes.MovementSpeed / 30;
-	        var dx = position.X - me.X;
-	        var dy = position.Y - me.Y;
-	        var distance = coord.Distance(me, position);
-	        var unitX = dx / distance;
-	        var unitY = dy / distance;
-	        var newX = unitX * moveDistance;
-	        var newY = unitY * moveDistance;
-	        me.Y += newY;
-	        me.X += newX;
-	        //I know thats a lot of unneccesary variables but showing it all makes it more understandable.
-	        //http://stackoverflow.com/questions/12550365/calculate-a-point-along-the-line-a-b-at-a-given-distance-from-a
-	      }, 33, function (chalkling) {
-	        if (coord.Distance(chalkling.Position, position) < 100 || chalkling.CurrentAction != "WALK") {
-	          return true;
-	        } else {
-	          return false;
-	        }
-	      }));
+	      this.Path = [position];
+	    }
+	  }, {
+	    key: 'moveAlongPath',
+	    value: function moveAlongPath(path) {
+	      //Path is array of points
+	      this.CurrentAction = "WALK";
+	      this.Path = path;
 	    }
 	  }, {
 	    key: 'die',
@@ -1284,19 +2322,34 @@
 	      return enemies;
 	    }
 	  }, {
+	    key: 'override',
+	    value: function override() {
+	      this.CurrentAction = "IDLE";
+	      this.Path = [];
+	      this.Frame = 0;
+	    }
+	  }, {
 	    key: 'update',
 	    value: function update() {
-	      if (this.Attributes.Health == 0) {
+	      //Update topleft and frame
+	      this.TopLeft = new _point2.default(this.Position.X - 50, this.Position.Y - 50);
+	      this.Frame++;
+	      if (this.Attributes.Health <= 0) {
 	        //1. Is it dead?
 	        this.die();
 	        return;
 	      }
-	      if (this.Frame == this.AnimationEnd) {
+	      if (this.Frame >= this.AnimationEnd) {
 	        //2. Is it's action done?
-	        if (this.Queue.length != 0) {
-	          this.nextCommand();
-	        } else {
-	          this.CurrentAction = "IDLE";
+	        if (this.CurrentAction == "ATTACK") {
+	          //So I'm attacking someone and I just finished an attack animation. Should I continue?
+	          if (this.Target.Attributes.Health > 0) {
+	            //My enemy is alive! Time to finish the job.
+	            this.CurrentAction = "ATTACK";
+	            this.Target.Attributes.Health -= this.Attributes.Attack;
+	          } else {
+	            this.CurrentAction = "IDLE";
+	          }
 	        }
 	        this.Frame = 0;
 	      }
@@ -1307,20 +2360,41 @@
 	          currentModifier.AttributeChange(this);
 	        }
 	      }
+	      if (this.Path.length != 0) {
+	        //Am I currently going somewhere?
+	        var distanceToMove = 33 / 1000 * this.Attributes.MovementSpeed;
+	        this.Position = coord.movePointAlongLine(this.Position, this.Path[0], distanceToMove);
+	        if (coord.Distance(this.Position, this.Path[0]) < distanceToMove) {
+	          //Did I make it where I need to go?
+	          this.Path.shift();
+	        }
+	      } else {
+	        //Finished my path, go into idle.
+	        this.CurrentAction = "IDLE";
+	      }
 	      if (this.CurrentAction == "IDLE" && this.getNearbyEnemies().length != 0) {
 	        //4. Is there a nearby enemy I can attack?
 	        this.Target = this.getNearbyEnemies()[0];
 	      }
 	      if (this.Target != null) {
 	        //If there's a target:
-	        if (coord.Distance(this.Target.Position, this.Position) >= this.Attributes.ViewRange) {
+	        if (this.Target.CurrentAction == "DEATH") {
+	          //Whoops, he's dead. Lets not bother him any more.
+	          this.Target = null;
+	        } else if (coord.Distance(this.Target.Position, this.Position) >= this.Attributes.ViewRange) {
 	          //5. Can i still see the target?
 	          this.CurrentAction = "IDLE";
-	        }
-	        if (coord.Distance(this.Target.Position, this.Position) <= this.Attributes.AttackRange) {
+	        } else if (coord.Distance(this.Target.Position, this.Position) <= this.Attributes.AttackRange) {
 	          //6. Should I move to follow my target?
-	          this.CurrentAction = "ATTACK";
+	          if (this.CurrentAction != "ATTACK") {
+	            //If we aren't already attacking...
+	            console.log("EEY");
+
+	            this.Path = [];
+	            this.CurrentAction = "ATTACK";
+	          }
 	        } else {
+	          //Follow him!
 	          this.CurrentAction = "WALK";
 	          this.moveTo(this.Target.Position);
 	        }
@@ -1330,7 +2404,11 @@
 	    key: 'render',
 	    value: function render() {
 	      this.update();
-	      return "<image xlink:href=\"" + this.getAnimation() + "\" x=\"" + this.Position.X + "\" y=\"" + this.Position.Y + "\" height=\"100\" width=\"100\" />";
+	      var chalklingImage = "<image xlink:href=\"" + this.getAnimation() + "\" x=\"" + this.TopLeft.X.toString() + "\" y=\"" + this.TopLeft.Y.toString() + "\" height=\"100\" width=\"100\" />";
+	      var healthBarOutside = '<rect x="' + this.TopLeft.X.toString() + '" y="' + (this.TopLeft.Y + 110).toString() + '" width="100" height="5" fill="green"/>';
+	      var healthRatio = (this.Attributes.MaxHealth - this.Attributes.Health) / this.Attributes.MaxHealth * 100;
+	      var healthBarLeft = '<rect x="' + (this.TopLeft.X + (100 - healthRatio)).toString() + '" y="' + (this.TopLeft.Y + 110).toString() + '" width="' + healthRatio.toString() + '" height="5" fill="red"/>';
+	      return chalklingImage + healthBarOutside + healthBarLeft;
 	    }
 	  }]);
 
@@ -1338,34 +2416,6 @@
 	}();
 
 	exports.default = Chalkling;
-
-/***/ },
-/* 12 */
-/***/ function(module, exports) {
-
-	"use strict";
-
-	Object.defineProperty(exports, "__esModule", {
-	  value: true
-	});
-
-	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
-	var ChalklingCommand = function ChalklingCommand(callback, time) {
-	  var endCondition = arguments.length <= 2 || arguments[2] === undefined ? function () {
-	    return true;
-	  } : arguments[2];
-
-	  _classCallCheck(this, ChalklingCommand);
-
-	  //callback's first parameter is references as the chalkling the command is given to, time is how long the callback takes,
-	  //if endCondition is met the action ends.
-	  this.Action = callback;
-	  this.Time = time;
-	  this.EndCondition = endCondition;
-	};
-
-	exports.default = ChalklingCommand;
 
 /***/ },
 /* 13 */

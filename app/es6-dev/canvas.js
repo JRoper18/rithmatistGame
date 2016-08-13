@@ -24,6 +24,7 @@ export default class Canvas{
     this.enable();
   }
   enable(){
+    console.log("Re-enabled");
     let self = this;
     let strokeId = 1;
     let recognizer = new PDollarRecognizer();
@@ -48,6 +49,7 @@ export default class Canvas{
         let newSelected = self.Board.selectChalklingAtPoint(new Point(mouseDownEvent.pageX, mouseDownEvent.pageY));
         self.Board.Selected = [newSelected];
       }
+      console.log("Mouse down");
       $(DOM).on("mousemove", function(mouseMoveEvent){
         let parentOffset = $(DOM).offset();
         //Offset allows for containers that don't fit thte entire page and work inside the surface.

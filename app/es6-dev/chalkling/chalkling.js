@@ -1,5 +1,4 @@
 import * as coord from '../coord.js';
-import ChalklingCommand from './chalklingCommand.js';
 import Point from '../point.js'
 
 export default class Chalkling{
@@ -45,10 +44,10 @@ export default class Chalkling{
   }
   moveTo(position){
     this.CurrentAction = "WALK";
-    this.Target = null;
     this.Path = [position];
   }
   moveAlongPath(path){  //Path is array of points
+    this.CurrentAction = "WALK"
     this.Path = path;
   }
   die(){
@@ -79,8 +78,6 @@ export default class Chalkling{
     }
     if(this.Frame >= this.AnimationEnd){ //2. Is it's action done?
       if(this.CurrentAction == "ATTACK"){ //So I'm attacking someone and I just finished an attack animation. Should I continue?
-      console.log("EEY")
-
         if(this.Target.Attributes.Health > 0){ //My enemy is alive! Time to finish the job.
           this.CurrentAction = "ATTACK";
           this.Target.Attributes.Health -= this.Attributes.Attack;
@@ -97,29 +94,37 @@ export default class Chalkling{
         currentModifier.AttributeChange(this);
       }
     }
+    if(this.Path.length != 0){ //Am I currently going somewhere?
+      let distanceToMove = (33/1000) * this.Attributes.MovementSpeed;
+      this.Position = coord.movePointAlongLine(this.Position, this.Path[0], distanceToMove);
+      if(coord.Distance(this.Position, this.Path[0]) < distanceToMove){ //Did I make it where I need to go?
+        this.Path.shift();
+      }
+    }
+    else{ //Finished my path, go into idle.
+      this.CurrentAction = "IDLE"
+    }
     if(this.CurrentAction == "IDLE" && this.getNearbyEnemies().length != 0){ //4. Is there a nearby enemy I can attack?
       this.Target = this.getNearbyEnemies()[0];
     }
     if(this.Target != null){ //If there's a target:
-      if(coord.Distance(this.Target.Position, this.Position) >= this.Attributes.ViewRange){ //5. Can i still see the target?
+      if(this.Target.CurrentAction == "DEATH"){ //Whoops, he's dead. Lets not bother him any more.
+        this.Target = null;
+      }
+      else if(coord.Distance(this.Target.Position, this.Position) >= this.Attributes.ViewRange){ //5. Can i still see the target?
         this.CurrentAction = "IDLE";
       }
-      let self = this;
-      if(coord.Distance(this.Target.Position, this.Position) <= this.Attributes.AttackRange){ //6. Should I move to follow my target?
+      else if(coord.Distance(this.Target.Position, this.Position) <= this.Attributes.AttackRange){ //6. Should I move to follow my target?
         if(this.CurrentAction != "ATTACK"){ //If we aren't already attacking...
+        console.log("EEY")
+
+          this.Path = [];
           this.CurrentAction = "ATTACK";
         }
       }
       else{ //Follow him!
         this.CurrentAction = "WALK";
         this.moveTo(this.Target.Position);
-      }
-    }
-    if(this.Path.length != 0){ //Am I currently going somewhere?
-      let distanceToMove = (33/1000) * this.Attributes.MovementSpeed;
-      this.Position = coord.movePointAlongLine(this.Position, this.Path[0], distanceToMove);
-      if(coord.Distance(this.Position, this.Path[0]) < distanceToMove){ //Did I make it where I need to go?
-        this.Path.shift();
       }
     }
   }
