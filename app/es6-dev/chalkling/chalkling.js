@@ -79,13 +79,25 @@ export default class Chalkling{
     }
     if(this.Frame >= this.AnimationEnd){ //2. Is it's action done?
       if(this.CurrentAction == "ATTACK"){ //So I'm attacking someone and I just finished an attack animation. Should I continue?
-        if(this.Target.Attributes.Health > 0){ //My enemy is alive! Time to finish the job.
-          this.CurrentAction = "ATTACK";
-          this.Target.Attributes.Health -= this.Attributes.Attack;
+        if(this.Target.constructor.name == "Circle"){
+          if(this.Target.Health > 0){ //My enemy is alive! Time to finish the job.
+            this.CurrentAction = "ATTACK";
+            this.Target.Health -= this.Attributes.Attack;
+          }
+          else{
+            this.CurrentAction = "IDLE";
+          }
         }
         else{
-          this.CurrentAction = "IDLE";
+          if(this.Target.Attributes.Health > 0){ //My enemy is alive! Time to finish the job.
+            this.CurrentAction = "ATTACK";
+            this.Target.Attributes.Health -= this.Attributes.Attack;
+          }
+          else{
+            this.CurrentAction = "IDLE";
+          }
         }
+
       }
       this.Frame = 0;
     }
@@ -105,11 +117,11 @@ export default class Chalkling{
     else{ //Finished my path, go into idle.
       this.CurrentAction = "IDLE"
     }
-    if(this.CurrentAction == "IDLE" && this.getNearbyEnemies().length != 0){ //4. Is there a nearby enemy I can attack?
+    if(this.Target == null && this.getNearbyEnemies().length != 0){ //4. Is there a nearby enemy I can attack?
       this.Target = this.getNearbyEnemies()[0];
     }
     if(this.Target != null){ //If there's a target:
-      if(this.Target.CurrentAction == "DEATH"){ //Whoops, he's dead. Lets not bother him any more.
+      if(this.Target.CurrentAction == "DEATH" || (this.Target.constructor.name == "Circle" && this.Target.Health <= 0)){ //Whoops, he's dead. Lets not bother him any more.
         this.Target = null;
       }
       else if(coord.Distance(this.Target.Position, this.Position) >= this.Attributes.ViewRange){ //5. Can i still see the target?
@@ -117,8 +129,6 @@ export default class Chalkling{
       }
       else if(coord.Distance(this.Target.Position, this.Position) <= this.Attributes.AttackRange){ //6. Should I move to follow my target?
         if(this.CurrentAction != "ATTACK"){ //If we aren't already attacking...
-        console.log("EEY")
-
           this.Path = [];
           this.CurrentAction = "ATTACK";
         }

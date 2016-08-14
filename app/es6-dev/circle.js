@@ -6,13 +6,23 @@ import * as SAT from '../../node_modules/sat'
 import RenderedElement from './renderedElement.js'
 
 export default class Circle extends Rune {
-	constructor(Points, ID) {
+	constructor(Points, ID, player) {
 		super(Points, ID)
 		//Close the points
 		this.Points.push(Points[0])
 		this.Position = new Point(coord.Centroid(this.Points).X, coord.Centroid(this.Points).Y);
 		this.Radius = this.averageDistanceFromCenter();
+		this.Points = coord.Resample(this.Points, Math.round(this.Radius))
 		this.HasBinded = [];
+		this.Player = player
+		this.MaxHealth = Math.round(this.Radius) * 10; //Health is related to the number of points (10 health per point) which is the Radius
+		//E.g bigger circle = more points = more health
+		this.Health = this.MaxHealth;
+		for(let i = 0; i<this.Points.length; i++){ //Deduct health for each point that's off center.
+			let distance = coord.Distance(this.Points[i], this.Position)
+			this.Health -= (distance/this.Radius)
+			//This means that a big circle will allow for more error.
+		}
 	}
 	toSATPolygon(){
 		let P = SAT.Polygon; //Shortening for easier typing
@@ -69,12 +79,16 @@ export default class Circle extends Rune {
 		}
 		return renderString;
 	}
-	render() { //Render functions return svg path strings
+	render() {
 		let radius = this.Radius;
 		let r = radius.toString();
+		
+		let healthRatio = 1-(this.Health/this.MaxHealth)
+		let strokeColor = "rgb(" + Math.round(healthRatio*255).toString() + "," + Math.round(255*(1-healthRatio)).toString() + ",0)"
+
 		//perfectCircle is the perfect circle shown for clarity
 		//Circle formula for paths found here: http://stackoverflow.com/questions/5737975/circle-drawing-with-svgs-arc-path/10477334#10477334
-		let perfectCircle = "<path fill='none' stroke='#af9e9e' strokewidth=3 d='M" + this.Position.X + " " + this.Position.Y + "m" + (-1 * radius).toString() + " 0a" + r + "," + r + " 0 1,0 " + (radius * 2).toString() + ",0" + "a " + r + "," + r + " 0 1,0 " + (radius * -2).toString() + ",0" + "'></path>"
+		let perfectCircle = "<path fill='none' stroke='" + strokeColor + "' strokewidth=3 d='M" + this.Position.X + " " + this.Position.Y + "m" + (-1 * radius).toString() + " 0a" + r + "," + r + " 0 1,0 " + (radius * 2).toString() + ",0" + "a " + r + "," + r + " 0 1,0 " + (radius * -2).toString() + ",0" + "'></path>"
 		let realCircle = new Rune(this.Points).render()
 		realCircle.Type = "CirclePoints"
 		return [new RenderedElement(perfectCircle, "CircleTrue"), realCircle]

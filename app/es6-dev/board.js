@@ -10,7 +10,7 @@ export default class Board{
   constructor(element){
     this.Element = element;
     this.Contains = [new Testling(1, "red", new Point(300, 0)), new Circle([new Point(100,0,1), new Point(170,39, 1), new Point(200, 100, 1), new Point(170, 170, 1), new Point(100, 200, 1), new Point(39, 170, 1), new Point(0, 100, 1), new Point(39, 39, 1), new Point(100,0,1)
-    ], 2)];
+    ], 2, "red")];
     this.Selected = [];
     this.Contains[0].moveTo(new Point(0, 0))
     this.Contains[1].moveTo(new Point(300, 300));
@@ -71,24 +71,30 @@ export default class Board{
       }
     }
   }
-  getBinded(callback = function(){}){ //depth-first search
+  getBinded(callback = function(){}, parent = false){ //depth-first search.
+    //If parent is true, the callback will be function(parent, child)
     let binded = [];
     for(let i = 0; i<this.Contains.length;i++){
-      this.getBindedIncursion(this.Contains[i], binded, callback);
+      this.getBindedIncursion(this.Contains[i], binded, callback, parent);
     }
     return binded;
   }
-  getBindedIncursion(rune, binded, callback){
+  getBindedIncursion(rune, binded, callback, parent){
     if(typeof rune.HasBinded != "undefined"){ //has binded stuff, find it recursively
+      if(parent){
+        callback(rune);
+      }
       for(let i = 0; i<rune.HasBinded.length; i++){
-        this.getBindedIncursion(rune.HasBinded[i], binded, callback);
+        this.getBindedIncursion(rune.HasBinded[i], binded, callback, parent);
       }
       binded.push(rune)
     }
     else{
       binded.push(rune)
     }
-    callback(rune);
+    if(!parent){
+      callback(rune);
+    }
   }
   removeDeadChalklings(){
     this.getBinded((rune) => {
@@ -100,19 +106,21 @@ export default class Board{
     })
   }
   updateChalklingView(){ //Updates what each chalkling can see.
-    let chalklings = []
-    this.getBinded((rune) => {
-      if(this.isChalkling(rune)){
-        chalklings.push(rune);
-      }
-    })
-    for(let j = 0; j<chalklings.length; j++){
-      for(let k = 0; k<chalklings.length; k++){
-        let currentDistance = coord.Distance(chalklings[j].Position, chalklings[k].Position)
-        if(currentDistance<chalklings[j].Attributes.ViewRange){
-          chalklings[j].Sees.push(chalklings[k]);
+    let runes = this.getBinded();
+    for(let j = 0; j<runes.length; j++){
+      let newSees = []
+      for(let k = 0; k<runes.length; k++){
+        if(j == k){ //Don't add ourselves to what we see. 
+          continue;
+        }
+        if(this.isChalkling(runes[j])){
+          let currentDistance = coord.Distance(runes[j].Position, runes[k].Position)
+          if(currentDistance<runes[j].Attributes.ViewRange){
+            newSees.push(runes[k]);
+          }
         }
       }
+      runes[j].Sees = newSees;
     }
   }
   updateHitboxes(){
@@ -170,6 +178,22 @@ export default class Board{
       }
     }
   }
+  removeDeadCircles(){
+    for(let j = 0;j<this.Contains.length;j++){
+      if(this.Contains[j].constructor.name == "Circle"){
+        if(this.Contains[j].Health <= 0){
+          this.Contains.splice(j, 1);
+        }
+      }
+    }
+    this.getBinded(function(parent){ //This will remove circles that are binded. We also need to check the top-level circles as well (done above).
+      for(let i = 0; i<parent.HasBinded.length; i++){
+        if(parent.HasBinded[i].Health <= 0){
+          parent.HasBinded.splice(i, 1);
+        }
+      }
+    }, true)
+  }
   selectChalklingAtPoint(point){
     let V = SAT.Vector;
     let B = SAT.Box;
@@ -196,6 +220,7 @@ export default class Board{
     this.removeDeadChalklings();
     this.updateHitboxes();
     this.updateChalklingView();
+    this.removeDeadCircles()
     let renderedElements = [];
     this.getBinded((rune) =>{
       let runeElements = rune.render();
