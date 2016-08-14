@@ -2,9 +2,9 @@ import * as coord from './coord.js';
 import Point from './point.js'
 import Rune from './rune.js';
 import Circle from './circle.js';
-import {Testling} from './chalklings/chalklings.js'
+import {Testling} from './chalklings.js'
 import * as SAT from '../../node_modules/sat'
-import Chalkling from './chalkling/chalkling.js'
+import Chalkling from './chalkling.js'
 
 export default class Board{
   constructor(element){
@@ -54,7 +54,7 @@ export default class Board{
   newRune(name, points, team){
     switch(name){
       case "circle":
-        let circle = new Circle(points, this.IDGenerator.next());
+        let circle = new Circle(points, this.IDGenerator.next(), "blue");
         this.newCircle(circle);
         break;
       case "attack":
@@ -110,7 +110,7 @@ export default class Board{
     for(let j = 0; j<runes.length; j++){
       let newSees = []
       for(let k = 0; k<runes.length; k++){
-        if(j == k){ //Don't add ourselves to what we see. 
+        if(j == k){ //Don't add ourselves to what we see.
           continue;
         }
         if(this.isChalkling(runes[j])){
@@ -181,14 +181,14 @@ export default class Board{
   removeDeadCircles(){
     for(let j = 0;j<this.Contains.length;j++){
       if(this.Contains[j].constructor.name == "Circle"){
-        if(this.Contains[j].Health <= 0){
+        if(this.Contains[j].Attributes.Health <= 0){
           this.Contains.splice(j, 1);
         }
       }
     }
     this.getBinded(function(parent){ //This will remove circles that are binded. We also need to check the top-level circles as well (done above).
       for(let i = 0; i<parent.HasBinded.length; i++){
-        if(parent.HasBinded[i].Health <= 0){
+        if(parent.HasBinded[i].Attributes.Health <= 0){
           parent.HasBinded.splice(i, 1);
         }
       }

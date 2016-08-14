@@ -1,4 +1,4 @@
-import Chalkling from './chalkling/chalkling.js';
+import Chalkling from './chalkling.js';
 
 export class Testling extends Chalkling{
   constructor(id, player, position){
@@ -7,7 +7,12 @@ export class Testling extends Chalkling{
       "Attack" : 300,
       "AttackRange" : 200,
       "MovementSpeed" : 100,
-      "ViewRange" : 3000
+      "ViewRange" : 3000,
+      "Tags" : [
+        "Mobile",
+        "Destructible",
+        "Hostile"
+      ]
     })
   }
 }

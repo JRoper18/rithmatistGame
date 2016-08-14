@@ -1,15 +1,11 @@
 import * as coord from './coord.js';
 import Point from './point.js'
 import RenderedElement from './renderedElement.js'
+import Unit from './unit.js'
 
-export default class Chalkling{
-  constructor(name, id, player, position, attributeSet, animationData){
-    this.Name = name;
-    this.Player = player;
-    this.ID = id;
-    this.Position = position;
-    this.Attributes = attributeSet;
-    this.Attributes.Health = this.Attributes.MaxHealth;
+export default class Chalkling extends Unit{
+  constructor(name, id, player, position, attributeSet){
+    super(name, id, player, position, attributeSet)
     this.CurrentAction = "IDLE";
     this.Frame = 0;
     this.Sees = [];
@@ -80,25 +76,13 @@ export default class Chalkling{
     }
     if(this.Frame >= this.AnimationEnd){ //2. Is it's action done?
       if(this.CurrentAction == "ATTACK"){ //So I'm attacking someone and I just finished an attack animation. Should I continue?
-        if(this.Target.constructor.name == "Circle"){
-          if(this.Target.Health > 0){ //My enemy is alive! Time to finish the job.
-            this.CurrentAction = "ATTACK";
-            this.Target.Health -= this.Attributes.Attack;
-          }
-          else{
-            this.CurrentAction = "IDLE";
-          }
+        if(this.Target.Attributes.Health > 0){ //My enemy is alive! Time to finish the job.
+          this.CurrentAction = "ATTACK";
+          this.Target.Attributes.Health -= this.Attributes.Attack;
         }
         else{
-          if(this.Target.Attributes.Health > 0){ //My enemy is alive! Time to finish the job.
-            this.CurrentAction = "ATTACK";
-            this.Target.Attributes.Health -= this.Attributes.Attack;
-          }
-          else{
-            this.CurrentAction = "IDLE";
-          }
+          this.CurrentAction = "IDLE";
         }
-
       }
       this.Frame = 0;
     }
@@ -119,10 +103,16 @@ export default class Chalkling{
       this.CurrentAction = "IDLE"
     }
     if(this.Target == null && this.getNearbyEnemies().length != 0){ //4. Is there a nearby enemy I can attack?
-      this.Target = this.getNearbyEnemies()[0];
+      let nearbyEnemies = this.getNearbyEnemies()
+      for(let i = 0; i<nearbyEnemies.length;i++){
+        if(!nearbyEnemies[i].hasTag("Hidden")){
+          this.Target = nearbyEnemies[i];
+          break;
+        }
+      }
     }
     if(this.Target != null){ //If there's a target:
-      if(this.Target.CurrentAction == "DEATH" || (this.Target.constructor.name == "Circle" && this.Target.Health <= 0)){ //Whoops, he's dead. Lets not bother him any more.
+      if(this.Target.CurrentAction == "DEATH" || this.Target.Attributes.Health <= 0){ //Whoops, he's dead. Lets not bother him any more.
         this.Target = null;
       }
       else if(coord.Distance(this.Target.Position, this.Position) >= this.Attributes.ViewRange){ //5. Can i still see the target?
@@ -144,7 +134,7 @@ export default class Chalkling{
     this.update();
     let chalklingImage = "<image xlink:href=\""  + this.getAnimation() + "\" x=\"" + (this.TopLeft.X).toString()+ "\" y=\"" + (this.TopLeft.Y).toString() + "\" height=\"100\" width=\"100\" />"
     let healthBarOutside = '<rect x="' + (this.TopLeft.X).toString() + '" y="' + (this.TopLeft.Y+110).toString() + '" width="100" height="5" fill="green"/>';
-    let healthRatio = (((this.Attributes.MaxHealth-this.Attributes.Health)/this.Attributes.MaxHealth)*100);
+    let healthRatio = Math.max(0, (((this.Attributes.MaxHealth-this.Attributes.Health)/this.Attributes.MaxHealth)*100));
     let healthBarLeft = '<rect x="' + ((this.TopLeft.X) + (100-healthRatio)).toString() + '" y="' + (this.TopLeft.Y+110).toString() + '" width="' + healthRatio.toString() +  '" height="5" fill="red"/>';
     let healthBarTotal = healthBarOutside + healthBarLeft
     return [new RenderedElement(chalklingImage, "ChalklingImage"), new RenderedElement(healthBarTotal, "ChalklingHealth")]

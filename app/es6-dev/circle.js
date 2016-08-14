@@ -1,28 +1,41 @@
 import recognizer from './recognizer';
-import Rune from './rune.js';
+import Unit from './unit.js';
 import * as coord from './coord.js';
 import Point from './point.js';
 import * as SAT from '../../node_modules/sat'
 import RenderedElement from './renderedElement.js'
+import Rune from './rune.js'
 
-export default class Circle extends Rune {
-	constructor(Points, ID, player) {
-		super(Points, ID)
-		//Close the points
-		this.Points.push(Points[0])
-		this.Position = new Point(coord.Centroid(this.Points).X, coord.Centroid(this.Points).Y);
-		this.Radius = this.averageDistanceFromCenter();
-		this.Points = coord.Resample(this.Points, Math.round(this.Radius))
-		this.HasBinded = [];
-		this.Player = player
-		this.MaxHealth = Math.round(this.Radius) * 10; //Health is related to the number of points (10 health per point) which is the Radius
-		//E.g bigger circle = more points = more health
-		this.Health = this.MaxHealth;
-		for(let i = 0; i<this.Points.length; i++){ //Deduct health for each point that's off center.
-			let distance = coord.Distance(this.Points[i], this.Position)
-			this.Health -= (distance/this.Radius)
+export default class Circle extends Unit {
+constructor(points, id, player){
+		points.push(points[0]);
+		//Close the circle
+
+		let position = coord.Centroid(points)
+
+		//Find the average distance (radius)
+		let distances = 0;
+		for (let i = 0; i < points.length; i++) {
+			distances += coord.Distance(position, points[i]);
+		}
+		let radius = distances / points.length;
+		points = coord.Resample(points, Math.round(radius))
+		const MAX = Math.round(radius) * 10; //Health is related to the number of points (10 health per point) which is the Radius. E.g bigger circle = more points = more health
+		let health = MAX;
+		for(let i = 0; i<points.length; i++){ //Deduct health for each point that's off center.
+			let distance = coord.Distance(points[i], position)
+			health -= (distance/radius)
 			//This means that a big circle will allow for more error.
 		}
+		let attr = {
+			"MaxHealth" : MAX,
+			"Health" : health
+		}
+		super("Circle", id, player, position, attr);
+		this.Points = points;
+		this.Radius = radius;
+
+		this.HasBinded = [];
 	}
 	toSATPolygon(){
 		let P = SAT.Polygon; //Shortening for easier typing
@@ -82,8 +95,8 @@ export default class Circle extends Rune {
 	render() {
 		let radius = this.Radius;
 		let r = radius.toString();
-		
-		let healthRatio = 1-(this.Health/this.MaxHealth)
+
+		let healthRatio = 1-(this.Attributes.Health/this.Attributes.MaxHealth)
 		let strokeColor = "rgb(" + Math.round(healthRatio*255).toString() + "," + Math.round(255*(1-healthRatio)).toString() + ",0)"
 
 		//perfectCircle is the perfect circle shown for clarity
