@@ -5,6 +5,7 @@ import Circle from './circle.js';
 import {Testling} from './chalklings.js'
 import * as SAT from '../../node_modules/sat'
 import Chalkling from './chalkling.js'
+import Line from './line.js'
 
 export default class Board{
   constructor(element){
@@ -22,13 +23,17 @@ export default class Board{
         yield index++;
       }
   }
-  newCircle(circle){
-    let allCircles = [];
+  getCircles(){
+    let circles = []
     this.getBinded((rune) =>{
       if(rune.constructor.name == "Circle"){
-        allCircles.push(rune)
+        circles.push(rune)
       }
     })
+    return circles;
+  }
+  newCircle(circle){
+    let allCircles = this.getCircles();
     let mostLikelyCircle;
     let mostLikelyCircleError = Infinity;
     for(let i = 0; i<allCircles.length; i++){
@@ -55,10 +60,23 @@ export default class Board{
     switch(name){
       case "circle":
         let circle = new Circle(points, this.IDGenerator.next(), "blue");
-        this.newCircle(circle);
+        this.newBindedRune(circle);
         break;
       case "attack":
         this.Contains.push(new Testling(this.IDGenerator.next(), team, new Point(coord.Centroid(points).X, coord.Centroid(points).Y)));
+        break;
+      case "line":
+        let distance = coord.Distance(points[0], points[1])
+        let lines = []
+        for(let i = 0; i<distance/10;i++){
+          let point1 = coord.movePointAlongLine(points[0], points[1], i * 10)
+          let point2 = coord.movePointAlongLine(points[0], points[1], (i + 1) * 10)
+          let line = new Line(point1, point2, this.IDGenerator.next(), team)
+          lines.push(line)
+          this.Contains.push(line);
+        }
+        //TODO: Check the first, last, and middle lines to circle bind points and then bind them.
+        break;
       default:
 
     }
@@ -178,9 +196,9 @@ export default class Board{
       }
     }
   }
-  removeDeadCircles(){
+  removeDeadBindedRunes(runeType){
     for(let j = 0;j<this.Contains.length;j++){
-      if(this.Contains[j].constructor.name == "Circle"){
+      if(this.Contains[j].constructor.name == runeType){
         if(this.Contains[j].Attributes.Health <= 0){
           this.Contains.splice(j, 1);
         }
@@ -220,7 +238,8 @@ export default class Board{
     this.removeDeadChalklings();
     this.updateHitboxes();
     this.updateChalklingView();
-    this.removeDeadCircles()
+    this.removeDeadBindedRunes("Circle")
+    this.removeDeadBindedRunes("Line")
     let renderedElements = [];
     this.getBinded((rune) =>{
       let runeElements = rune.render();

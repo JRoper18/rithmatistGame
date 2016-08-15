@@ -25,66 +25,98 @@ export default class Canvas{
   }
   enable(){
     console.log("Re-enabled");
-    let self = this;
     let strokeId = 1;
     let recognizer = new PDollarRecognizer();
     getUserRunes(recognizer, this.Runes);
     let DOM = this.Board.Element;
-    $(document).on( "keydown", function(key){
+    let mousePosition = new Point()
+    $(document).on( "keydown", (key) => {
       if(key.which == 90){ //If "z" key held down
         //Clear Points
-        self.CurrentRune.Points = [];
+        this.CurrentRune.Points = [];
       }
       else if(key.which == 49){ //"1" key
         //Set to draw mode
-        self.changeMode("DRAW");
+        this.changeMode("DRAW");
       }
       else if(key.which == 50){ //"2" key
-        //Set to path mode
-        self.changeMode("COMMAND");
+        this.changeMode("COMMAND");
+      }
+      else if(key.which == 16 && this.Mode == "DRAW"){
+        this.changeMode("STRAIGHTLINE");
       }
     })
-    $(DOM).on("mousedown", function(mouseDownEvent){
-      if(self.Mode == "COMMAND"){
-        let newSelected = self.Board.selectChalklingAtPoint(new Point(mouseDownEvent.pageX, mouseDownEvent.pageY));
-        self.Board.Selected = [newSelected];
+    $(document).on("keyup", (key) => {
+      if(key.which == 16 && this.Mode == "STRAIGHTLINE"){ //Shift
+        this.changeMode("DRAW");
       }
-      console.log("Mouse down");
-      $(DOM).on("mousemove", function(mouseMoveEvent){
-        let parentOffset = $(DOM).offset();
-        //Offset allows for containers that don't fit thte entire page and work inside the surface.
-        let relX = mouseMoveEvent.pageX - parentOffset.left;
-        let relY = mouseMoveEvent.pageY - parentOffset.top;
-        //Add the new point data
-        self.CurrentRune.Points.push(new Point(relX, relY, strokeId));
+    })
+    if(this.Mode == "COMMAND"){
+      $(DOM).on("mousedown", (mouseDownEvent) => {
+        mousePosition = this.getMousePosition(mouseDownEvent);
+        let newSelected = this.Board.selectChalklingAtPoint(mousePosition);
+        this.Board.Selected = [newSelected];
+        $(DOM).on("mousemove", (mouseMoveEvent) =>{
+          mousePosition = this.getMousePosition(mouseMoveEvent);
+          //Add the new point data
+          this.CurrentRune.Points.push(new Point(mousePosition.X, mousePosition.Y, strokeId));
+
+        });
       });
-    });
-    $(DOM).on("mouseup", function(){
-      $(DOM).off( "mousemove" );
-      if(self.Mode == "DRAW"){
-        let recognizedResult = recognizer.Recognize(self.CurrentRune.Points);
+      $(DOM).on("mouseup", () => {
+        $(DOM).off( "mousemove" );
+          this.Board.moveChalklingAlongPath(this.CurrentRune.Points);
+          this.CurrentRune = new Rune([])
+      });
+    }
+    else if(this.Mode == "DRAW"){
+      $(DOM).on("mousedown", (mouseDownEvent) => {
+        $(DOM).on("mousemove", (mouseMoveEvent) =>{
+          mousePosition = this.getMousePosition(mouseMoveEvent);
+          //Add the new point data
+          this.CurrentRune.Points.push(new Point(mousePosition.X, mousePosition.Y, strokeId));
+        });
+      });
+      $(DOM).on("mouseup", () => {
+        $(DOM).off( "mousemove" );
+
+        let recognizedResult = recognizer.Recognize(this.CurrentRune.Points);
         //WARNING Recognize adds 99-98 more randon points to a point array, which is why I made a clone of of the points and then recognized the clone.
         if(recognizedResult.Score > 0.1){ //If they just drew something
-          self.Board.newRune(recognizedResult.Name, self.CurrentRune.Points, "blue");
-          self.CurrentRune = new Rune([]);
+          this.Board.newRune(recognizedResult.Name, this.CurrentRune.Points, "blue");
+          this.CurrentRune = new Rune([]);
         }
         strokeId++;
-      }
-      else if(self.Mode == "COMMAND"){
-        self.Board.moveChalklingAlongPath(self.CurrentRune.Points);
-        self.CurrentRune = new Rune([])
-
-      }
-    });
+      })
+    }
+    else if(this.Mode == "STRAIGHTLINE"){
+      $(DOM).on("mousedown", (mouseDownEvent) => {
+        this.CurrentRune = new Rune([this.getMousePosition(mouseDownEvent)]);
+        $(DOM).on("mousemove", (mouseMoveEvent) =>{
+          this.CurrentRune.Points[1] = this.getMousePosition(mouseMoveEvent)
+        })
+      })
+      $(DOM).on("mouseup", () => {
+        $(DOM).off( "mousemove" );
+        this.Board.newRune("line", this.CurrentRune.Points, "blue");
+      })
+    }
+  }
+  getMousePosition(event){
+    let parentOffset = $(this.Board.Element).offset();
+    //Offset allows for containers that don't fit thte entire page and work inside the surface.
+    let relX = event.pageX - parentOffset.left;
+    let relY = event.pageY - parentOffset.top;
+    return new Point(relX, relY)
   }
   render(){
     let path;
     switch(this.Mode){
       case "DRAW":
-        path = this.CurrentRune.render();
+        path = this.CurrentRune.render("FILL");
         break;
       case "COMMAND":
-        path = this.CurrentRune.render("PATH");
+        path = this.CurrentRune.render("DASH");
         break;
       default:
         path = this.CurrentRune.render();

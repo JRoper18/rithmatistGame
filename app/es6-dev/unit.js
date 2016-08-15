@@ -29,4 +29,10 @@ export default class Unit{
     }
     return false;
   }
+  /*
+  Possible Tags include:
+    Hidden
+    Mobile
+    Destructible
+  */
 }
