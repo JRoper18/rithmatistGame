@@ -6,6 +6,8 @@ import {Testling} from './chalklings.js'
 import * as SAT from '../../node_modules/sat'
 import Chalkling from './chalkling.js'
 import Line from './line.js'
+import RenderedElement from './renderedElement.js'
+import SelectedOverlay from './selectedOverlay.js'
 
 export default class Board{
   constructor(element){
@@ -13,8 +15,8 @@ export default class Board{
     this.Contains = [new Testling(1, "red", new Point(300, 0)), new Circle([new Point(100,0,1), new Point(170,39, 1), new Point(200, 100, 1), new Point(170, 170, 1), new Point(100, 200, 1), new Point(39, 170, 1), new Point(0, 100, 1), new Point(39, 39, 1), new Point(100,0,1)
     ], 2, "red")];
     this.Selected = [];
-    this.Contains[0].moveTo(new Point(0, 0))
-    this.Contains[1].moveTo(new Point(300, 300));
+    this.Contains[0].moveTo(new Point(300, 300))
+    this.Contains[1].moveTo(new Point(300, 600));
     this.IDGenerator = this.getId();
   }
   *getId(){
@@ -81,7 +83,8 @@ export default class Board{
 
     }
   }
-  moveChalklingAlongPath(path){
+  moveSelectedAlongPath(path){
+    console.log(this.Selected);
     if(this.Selected[0] != null){
       for(let i = 0; i<this.Selected.length; i++){
         let currentSelected = this.Selected[i];
@@ -155,7 +158,6 @@ export default class Board{
         let response = new SAT.Response();
         let entity1 = runes[i];
         let entity2 = runes[j];
-        response.clear();
         const BOUNCE = 1.1
         if(entity1.constructor.name == "Circle" || entity2.constructor.name == "Circle"){ //One's a circle
           if(entity1.constructor.name == "Circle" && entity2.constructor.name == "Circle"){ //Both circles
@@ -171,7 +173,6 @@ export default class Board{
           }
           else if(this.isChalkling(entity2)){ //2 is chalkling, 1 is circle
             if(SAT.testPolygonPolygon(new B(new V(entity2.TopLeft.X, entity2.TopLeft.Y), 100, 100).toPolygon(), entity1.toSATPolygon(), response)){
-              entity2.Position.X -= (response.overlapV.x + 1 * BOUNCE)
               entity2.Position.Y -= (response.overlapV.y  + 1 * BOUNCE)
               entity2.override();
             }
@@ -224,7 +225,26 @@ export default class Board{
         }
       }
     })
-    return chalkling;
+    this.Selected = [chalkling];
+  }
+  selectChalklingsInRect(point1, point2){
+    let V = SAT.Vector;
+    let B = SAT.Box;
+    let lesserX = (point1.X > point2.X) ? point2.X : point1.X
+    let lesserY = (point1.Y > point2.Y) ? point2.Y : point1.Y
+    let greaterX = (point1.X < point2.X) ? point2.X : point1.X
+    let greaterY = (point1.Y < point2.Y) ? point2.Y : point1.Y
+    let selected = []
+    this.getBinded((rune) => {
+      if(this.isChalkling(rune)){
+        let vecPoint = new V(rune.Position.X, rune.Position.Y)
+        if(SAT.pointInPolygon(vecPoint, new B(new V(lesserX, lesserY), greaterX-lesserX, greaterY-lesserY).toPolygon())){
+          selected.push(rune)
+        }
+      }
+    })
+    console.log(selected);
+    this.Selected = selected;
   }
   isChalkling(rune){
     if(rune.__proto__ instanceof Chalkling){
@@ -234,6 +254,14 @@ export default class Board{
       return false;
     }
   }
+  renderSelected(){
+    let selectedArray = []
+    for(let i = 0; i<this.Selected.length; i++){
+      let currentRunePosition = this.Selected[i].TopLeft
+      selectedArray.push(new SelectedOverlay(currentRunePosition))
+    }
+    return selectedArray;
+  }
   render(){
     this.removeDeadChalklings();
     this.updateHitboxes();
@@ -241,7 +269,10 @@ export default class Board{
     this.removeDeadBindedRunes("Circle")
     this.removeDeadBindedRunes("Line")
     let renderedElements = [];
-    this.getBinded((rune) =>{
+
+    let allRunes = this.getBinded();
+    allRunes = allRunes.concat(this.renderSelected());
+    for(let rune of allRunes){
       let runeElements = rune.render();
       for(let i = 0; i<runeElements.length; i++){ //Some render functions return multiple renderedElements, so go through all of them.
         let tempElement = runeElements[i]
@@ -264,7 +295,7 @@ export default class Board{
           }
         }
       }
-    })
+    }
     let renderString = '';
     for(let i = 0; i<renderedElements.length; i++){
       renderString += renderedElements[i].RenderString;

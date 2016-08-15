@@ -36,6 +36,9 @@ export default class Rune{ //A Rune is a non-animated (static) set of points
       case "DASH":
         return new RenderedElement('<path stroke="black" stroke-dasharray= "5,5" fill="none" stroke-width = "1" d="' + svgPathString + '"></path>', "Rune")
         break;
+      case "FADE":
+        return new RenderedElement('<path stroke="grey" fill="none" stroke-width = "1" d="' + svgPathString + '"></path>', "Rune")
+        break;
       default:
         return new RenderedElement('<path stroke="black" fill="none" stroke-width = "1" d="' + svgPathString + '"></path>', "Rune");
 

@@ -7,11 +7,12 @@
       //Global variable
       var devConfig = {
         "renderOrder" : {
-          "CirclePoints" : 2,
-          "CircleTrue" : 1,
+          "CirclePoints" : 1,
+          "CircleTrue" : 0,
           "ChalklingImage" : 3,
           "ChalklingHealth" : 4,
           "Line": 5,
+          "SelectedOutline" : 2,
           "Rune" : 0
         }
       }
@@ -19,6 +20,6 @@
     <script src="./polyfill.min.js"></script>
     <script src="./jquery-3.0.0.min.js"></script>
     <script src="./bundle.js"></script>
-    <div id="content" style="width:100vw;height:100vh;"></div>
+    <div oncontextmenu="return false;" id="content" style="width:100vw;height:100vh;"></div>
   </body>
 </html>
