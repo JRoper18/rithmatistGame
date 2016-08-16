@@ -41,10 +41,12 @@ export default class Chalkling extends Unit{
     return pathToAnimation;
   }
   moveTo(position){
+    this.Target = null;
     this.CurrentAction = "WALK";
     this.Path = [position];
   }
   moveAlongPath(path){  //Path is array of points
+    this.Target = null;
     this.CurrentAction = "WALK"
     this.Path = path;
   }
@@ -65,6 +67,7 @@ export default class Chalkling extends Unit{
     this.CurrentAction = "IDLE";
     this.Path = [];
     this.Frame = 0;
+    this.Target = null;
   }
   update(){
     //Update topleft and frame
@@ -102,20 +105,28 @@ export default class Chalkling extends Unit{
     else{ //Finished my path, go into idle.
       this.CurrentAction = "IDLE"
     }
-    if(this.Target == null && this.getNearbyEnemies().length != 0){ //4. Is there a nearby enemy I can attack?
+    if((this.Target == null && this.getNearbyEnemies().length != 0) && this.CurrentAction == "IDLE"){ //4. Is there a nearby enemy I can attack?
       let nearbyEnemies = this.getNearbyEnemies()
+      let closestEnemy = null;
+      let closestEnemyDistance = Infinity;
       for(let i = 0; i<nearbyEnemies.length;i++){
-        if(!nearbyEnemies[i].hasTag("Hidden")){
-          this.Target = nearbyEnemies[i];
-          break;
+        if(nearbyEnemies[i].hasTag("Hidden")){ //Don't bother looking at nearby people if they're hidden.
+          continue;
+        }
+        let currentDistance = coord.Distance(this.Position, nearbyEnemies[i].Position)
+        if(currentDistance < closestEnemyDistance){
+          closestEnemy = nearbyEnemies[i]
+          closestEnemyDistance = currentDistance;
         }
       }
+      this.Target = closestEnemy
     }
     if(this.Target != null){ //If there's a target:
       if(this.Target.CurrentAction == "DEATH" || this.Target.Attributes.Health <= 0){ //Whoops, he's dead. Lets not bother him any more.
         this.Target = null;
       }
       else if(coord.Distance(this.Target.Position, this.Position) >= this.Attributes.ViewRange){ //5. Can i still see the target?
+        this.Target = null;
         this.CurrentAction = "IDLE";
       }
       else if(coord.Distance(this.Target.Position, this.Position) <= this.Attributes.AttackRange){ //6. Should I move to follow my target?

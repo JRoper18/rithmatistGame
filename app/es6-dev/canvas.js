@@ -114,7 +114,7 @@ export default class Canvas{
           this.CurrentRune.Points[1] = this.getMousePosition(passedEvent)
         }
         else if(type == "mouseup"){
-          this.Board.newRune("line", this.CurrentRune.Points, "blue");
+          this.Board.newRune("line", this.CurrentRune.Points, "ALKJADLSK");
         }
       }
   }

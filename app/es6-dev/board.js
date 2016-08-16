@@ -18,6 +18,7 @@ export default class Board{
     this.Contains[0].moveTo(new Point(300, 300))
     this.Contains[1].moveTo(new Point(300, 600));
     this.IDGenerator = this.getId();
+    this.Contains.push(new Testling(42, "red", new Point(300, 100)))
   }
   *getId(){
       let index = 3;
@@ -62,7 +63,7 @@ export default class Board{
     switch(name){
       case "circle":
         let circle = new Circle(points, this.IDGenerator.next(), "blue");
-        this.newBindedRune(circle);
+        this.newCircle(circle);
         break;
       case "attack":
         this.Contains.push(new Testling(this.IDGenerator.next(), team, new Point(coord.Centroid(points).X, coord.Centroid(points).Y)));
@@ -75,6 +76,7 @@ export default class Board{
           let point2 = coord.movePointAlongLine(points[0], points[1], (i + 1) * 10)
           let line = new Line(point1, point2, this.IDGenerator.next(), team)
           lines.push(line)
+          //TODO: Don't just push it randomly
           this.Contains.push(line);
         }
         //TODO: Check the first, last, and middle lines to circle bind points and then bind them.
@@ -84,7 +86,6 @@ export default class Board{
     }
   }
   moveSelectedAlongPath(path){
-    console.log(this.Selected);
     if(this.Selected[0] != null){
       for(let i = 0; i<this.Selected.length; i++){
         let currentSelected = this.Selected[i];
@@ -122,6 +123,7 @@ export default class Board{
       if(this.isChalkling(rune)){
         if(rune.CurrentAction == "DEATH"){
           this.Contains.splice(this.Contains.indexOf(rune), 1); //If the chalkling is dead, removes is from board.
+          this.Selected.splice(this.Contains.indexOf(rune), 1); //Also, make sure you unselect it.
         }
       }
     })
@@ -140,6 +142,7 @@ export default class Board{
             newSees.push(runes[k]);
           }
         }
+
       }
       runes[j].Sees = newSees;
     }
@@ -182,6 +185,9 @@ export default class Board{
           }
         }
         else if(this.isChalkling(entity1) && this.isChalkling(entity2)){ //Both are chalklings
+
+          //For now, it's ok for them to overlap. Uncomment if you want them not to.
+          /*
           //Create a bounding box around chalkling
           let firstChalklingBox = new B(new V(entity1.TopLeft.X, entity1.TopLeft.Y), 100, 100).toPolygon();
           let secondChalklingBox = new B(new V(entity2.TopLeft.X, entity2.TopLeft.Y), 100, 100).toPolygon();
@@ -193,6 +199,7 @@ export default class Board{
             entity2.Position.X +=collidedVector.x;
             entity2.Position.Y +=collidedVector.y;
           }
+          */
         }
       }
     }
@@ -243,7 +250,6 @@ export default class Board{
         }
       }
     })
-    console.log(selected);
     this.Selected = selected;
   }
   isChalkling(rune){
