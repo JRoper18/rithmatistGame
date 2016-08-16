@@ -17,14 +17,18 @@ export default class Chalkling extends Unit{
   getAnimation(){ //Example path: ./chalklings/Testling/Animations/Idle/X
     let pathToAnimation = '';
     switch(this.CurrentAction){
+      /*
+      The reason for the frame+1 and parenthesis is because I can take a group of png files, selected them all, and then rename using f2/
+      If I put no name in, it names them (1), (2), etc. 
+       */
       case "IDLE":
-        pathToAnimation = './chalklings/' + this.Name + '/Animations/Idle/' + this.Frame + ".png";
+        pathToAnimation = './chalklings/' + this.Name + '/Animations/Idle/(' + (this.Frame+1) + ").png";
         break;
       case "WALK":
-        pathToAnimation = './chalklings/' + this.Name + '/Animations/Walk/' + this.Frame + ".png";
+        pathToAnimation = './chalklings/' + this.Name + '/Animations/Walk/(' + (this.Frame+1) + ").png";
         break;
       case "ATTACK":
-        pathToAnimation = './chalklings/' + this.Name + '/Animations/Attack/' + this.Frame + ".png";
+        pathToAnimation = './chalklings/' + this.Name + '/Animations/Attack/(' + (this.Frame+1) + ").png";
         break;
       case "DEATH":
         pathToAnimation = './chalklings/' + this.Name + '/Animations/Death/' + this.Frame + ".png";
@@ -79,14 +83,13 @@ export default class Chalkling extends Unit{
     }
 
     //Calculate the current frame.
-    let newTime = (this.TimeSinceAnimationStarted + time)/1000; //Get the new time since the animation started in seconds.
+    let newTime = (this.TimeSinceAnimationStarted + time); //Get the new time since the animation started
     let numFrames = this.Attributes.AnimationData[this.CurrentAction].Frames;
     let animationTime = this.Attributes.AnimationData[this.CurrentAction].Time;
     let framesPerSecond = numFrames/animationTime;
-    this.Frame = Math.round(newTime * framesPerSecond)
+    this.Frame = Math.min(Math.round(newTime * framesPerSecond), numFrames-1) //Don't round up if we're out of frames. The -1 is because we start at frame 0;
     this.TimeSinceAnimationStarted = newTime;
-
-    if(newTime > animationTime){ //Is it's action done?
+    if(newTime > animationTime){ //Is my animation done?
       if(this.CurrentAction == "ATTACK"){ //So I'm attacking someone and I just finished an attack animation. Should I continue?
         if(this.Target.Attributes.Health > 0){ //My enemy is alive! Time to finish the job.
           this.CurrentAction = "ATTACK";

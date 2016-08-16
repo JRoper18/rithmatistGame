@@ -62,7 +62,6 @@ export default class Canvas{
     })
   }
   doAction(passedEvent, type){
-    console.log("EEY");
       if(this.Mode == "DRAW"){
         if(type == "mousemove"){
           let mousePosition = this.getMousePosition(passedEvent);

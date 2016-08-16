@@ -11,15 +11,15 @@ export class Testling extends Chalkling{
       "AnimationData": {
         "IDLE" : {
           "Frames" : 1,
-          "Time" : 1
+          "Time" : 1000
         },
         "WALK" : {
           "Frames" : 1,
-          "Time" : 1
+          "Time" : 1000
         },
         "ATTACK": {
-          "Frames" : 1,
-          "Time" : 1
+          "Frames" : 21,
+          "Time" : 1000
         }
       },
       "Tags" : [

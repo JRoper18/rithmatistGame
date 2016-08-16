@@ -12,7 +12,7 @@ window.onload = function(){
   requestAnimationFrame(gameLoop)
 }
 function gameLoop(timeStamp){
-  let changeInTime = timeStamp - lastFrameTime;
+  let changeInTime = (timeStamp - lastFrameTime);
   lastFrameTime = timeStamp;
   update(changeInTime);
   render();
