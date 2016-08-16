@@ -8,6 +8,20 @@ export class Testling extends Chalkling{
       "AttackRange" : 200,
       "MovementSpeed" : 100,
       "ViewRange" : 3000,
+      "AnimationData": {
+        "IDLE" : {
+          "Frames" : 1,
+          "Time" : 1
+        },
+        "WALK" : {
+          "Frames" : 1,
+          "Time" : 1
+        },
+        "ATTACK": {
+          "Frames" : 1,
+          "Time" : 1
+        }
+      },
       "Tags" : [
         "Mobile",
         "Destructible",

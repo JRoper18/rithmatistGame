@@ -1,13 +1,13 @@
 import PDollarRecognizer from './recognizer';
 import {allRunes, getUserRunes} from './runeData.js'
-import Board from './board.js'
+import GameState from './gameState.js'
 import Rune from './rune.js'
 import Point from './point.js'
 import * as coord from './coord.js'
 
 export default class Canvas{
   constructor(board, runes){
-    this.Board = board;
+    this.GameState = board;
     this.Runes = runes;
     this.Mode = "COMMAND";
     this.CurrentRune = new Rune([]);
@@ -22,7 +22,7 @@ export default class Canvas{
   }
   enable(){
     getUserRunes(this.Recognizer, this.Runes);
-    let DOM = this.Board.Element;
+    let DOM = '#' + this.GameState.Element;
     $(document).on( "keydown", (key) => {
       if(key.which == 90){ //If "z" key held down
         //Clear Points
@@ -62,6 +62,7 @@ export default class Canvas{
     })
   }
   doAction(passedEvent, type){
+    console.log("EEY");
       if(this.Mode == "DRAW"){
         if(type == "mousemove"){
           let mousePosition = this.getMousePosition(passedEvent);
@@ -72,7 +73,7 @@ export default class Canvas{
           let recognizedResult = this.Recognizer.Recognize(this.CurrentRune.Points);
           //WARNING Recognize adds 99-98 more randon points to a point array, which is why I made a clone of of the points and then recognized the clone.
           if(recognizedResult.Score > 0.1){ //If they just drew something
-            this.Board.newRune(recognizedResult.Name, this.CurrentRune.Points, "blue");
+            this.GameState.newRune(recognizedResult.Name, this.CurrentRune.Points, "blue");
             this.CurrentRune = new Rune([]);
           }
           this.StrokeId++;
@@ -88,7 +89,7 @@ export default class Canvas{
           this.CurrentRune.Points = [startPos, new Point(startPos.X, currentPos.Y), currentPos, new Point(currentPos.X, startPos.Y), startPos]
         }
         else if(type == "mouseup"){
-          this.Board.selectChalklingsInRect(this.CurrentRune.Points[0], this.CurrentRune.Points[2])
+          this.GameState.selectChalklingsInRect(this.CurrentRune.Points[0], this.CurrentRune.Points[2])
           this.CurrentRune = new Rune([])
         }
       }
@@ -102,7 +103,7 @@ export default class Canvas{
           this.CurrentRune.Points.push(new Point(mousePosition.X, mousePosition.Y, this.StrokeId));
         }
         else if(type == "mouseup"){
-          this.Board.moveSelectedAlongPath(this.CurrentRune.Points);
+          this.GameState.moveSelectedAlongPath(this.CurrentRune.Points);
           this.CurrentRune = new Rune([])
         }
       }
@@ -114,13 +115,13 @@ export default class Canvas{
           this.CurrentRune.Points[1] = this.getMousePosition(passedEvent)
         }
         else if(type == "mouseup"){
-          this.Board.newRune("line", this.CurrentRune.Points, "ALKJADLSK");
+          this.GameState.newRune("line", this.CurrentRune.Points, "ALKJADLSK");
         }
       }
   }
   getMousePosition(passedEvent){
 
-    let parentOffset = $(this.Board.Element).offset();
+    let parentOffset = $("#" + this.GameState.Element).offset();
     //Offset allows for containers that don't fit thte entire page and work inside the surface.
     let relX = passedEvent.pageX - parentOffset.left;
     let relY = passedEvent.pageY - parentOffset.top;

@@ -9,7 +9,7 @@ export default class Chalkling extends Unit{
     this.CurrentAction = "IDLE";
     this.Frame = 0;
     this.Sees = [];
-    this.AnimationEnd = -1;
+    this.TimeSinceAnimationStarted = 0;
     this.Target = null;
     this.Path = []
     this.TopLeft = new Point(this.Position.X - 50, this.Position.Y - 50)
@@ -69,15 +69,24 @@ export default class Chalkling extends Unit{
     this.Frame = 0;
     this.Target = null;
   }
-  update(){
-    //Update topleft and frame
+  update(time){
+    //Update topleft
     this.TopLeft = new Point(this.Position.X - 50, this.Position.Y - 50)
-    this.Frame++;
-    if(this.Attributes.Health <= 0){ //1. Is it dead?
+
+    if(this.Attributes.Health <= 0){ //Is it dead?
       this.die();
       return;
     }
-    if(this.Frame >= this.AnimationEnd){ //2. Is it's action done?
+
+    //Calculate the current frame.
+    let newTime = (this.TimeSinceAnimationStarted + time)/1000; //Get the new time since the animation started in seconds.
+    let numFrames = this.Attributes.AnimationData[this.CurrentAction].Frames;
+    let animationTime = this.Attributes.AnimationData[this.CurrentAction].Time;
+    let framesPerSecond = numFrames/animationTime;
+    this.Frame = Math.round(newTime * framesPerSecond)
+    this.TimeSinceAnimationStarted = newTime;
+
+    if(newTime > animationTime){ //Is it's action done?
       if(this.CurrentAction == "ATTACK"){ //So I'm attacking someone and I just finished an attack animation. Should I continue?
         if(this.Target.Attributes.Health > 0){ //My enemy is alive! Time to finish the job.
           this.CurrentAction = "ATTACK";
@@ -88,15 +97,16 @@ export default class Chalkling extends Unit{
         }
       }
       this.Frame = 0;
+      this.TimeSinceAnimationStarted = 0;
     }
-    for(let i = 0; i<this.Attributes.Modifiers; i++){ //3. Can any of it's modifiers be applied?
+    for(let i = 0; i<this.Attributes.Modifiers; i++){ //Can any of it's modifiers be applied?
       let currentModifier = this.Attributes.Modifiers[i];
       if(currentModifier.Condition(this) == true){
         currentModifier.AttributeChange(this);
       }
     }
     if(this.Path.length != 0){ //Am I currently going somewhere?
-      let distanceToMove = (33/1000) * this.Attributes.MovementSpeed;
+      let distanceToMove = (time/1000) * this.Attributes.MovementSpeed;
       this.Position = coord.movePointAlongLine(this.Position, this.Path[0], distanceToMove);
       if(coord.Distance(this.Position, this.Path[0]) < distanceToMove){ //Did I make it where I need to go?
         this.Path.shift();
@@ -105,7 +115,7 @@ export default class Chalkling extends Unit{
     else{ //Finished my path, go into idle.
       this.CurrentAction = "IDLE"
     }
-    if((this.Target == null && this.getNearbyEnemies().length != 0) && this.CurrentAction == "IDLE"){ //4. Is there a nearby enemy I can attack?
+    if((this.Target == null && this.getNearbyEnemies().length != 0) && this.CurrentAction == "IDLE"){ //Is there a nearby enemy I can attack?
       let nearbyEnemies = this.getNearbyEnemies()
       let closestEnemy = null;
       let closestEnemyDistance = Infinity;
@@ -125,11 +135,11 @@ export default class Chalkling extends Unit{
       if(this.Target.CurrentAction == "DEATH" || this.Target.Attributes.Health <= 0){ //Whoops, he's dead. Lets not bother him any more.
         this.Target = null;
       }
-      else if(coord.Distance(this.Target.Position, this.Position) >= this.Attributes.ViewRange){ //5. Can i still see the target?
+      else if(coord.Distance(this.Target.Position, this.Position) >= this.Attributes.ViewRange){ //Can i still see the target?
         this.Target = null;
         this.CurrentAction = "IDLE";
       }
-      else if(coord.Distance(this.Target.Position, this.Position) <= this.Attributes.AttackRange){ //6. Should I move to follow my target?
+      else if(coord.Distance(this.Target.Position, this.Position) <= this.Attributes.AttackRange){ //Should I move to follow my target?
         if(this.CurrentAction != "ATTACK"){ //If we aren't already attacking...
           this.Path = [];
           this.CurrentAction = "ATTACK";
@@ -142,7 +152,6 @@ export default class Chalkling extends Unit{
     }
   }
   render(){
-    this.update();
     let chalklingImage = "<image xlink:href=\""  + this.getAnimation() + "\" x=\"" + (this.TopLeft.X).toString()+ "\" y=\"" + (this.TopLeft.Y).toString() + "\" height=\"100\" width=\"100\" />"
     let healthBarOutside = '<rect x="' + (this.TopLeft.X).toString() + '" y="' + (this.TopLeft.Y+110).toString() + '" width="100" height="5" fill="green"/>';
     let healthRatio = Math.max(0, (((this.Attributes.MaxHealth-this.Attributes.Health)/this.Attributes.MaxHealth)*100));
