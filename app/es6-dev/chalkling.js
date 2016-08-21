@@ -169,7 +169,7 @@ export default class Chalkling extends Unit{
     //Other methods here: http://stackoverflow.com/questions/16983442/how-to-specify-the-portion-of-the-image-to-be-rendered-inside-svgimage-tag
     if(this.CurrentAction == "DEATH"){
       return []
-    }
+    } 
     const totalWidth = this.Attributes.AnimationData[this.CurrentAction].Size.X
     const frameWidth = (totalWidth/this.Attributes.AnimationData[this.CurrentAction].Frames)
     const frameHeight = this.Attributes.AnimationData[this.CurrentAction].Size.Y
