@@ -50,11 +50,11 @@
 
 	var _canvas2 = _interopRequireDefault(_canvas);
 
-	var _board = __webpack_require__(7);
+	var _gameState = __webpack_require__(7);
 
-	var _board2 = _interopRequireDefault(_board);
+	var _gameState2 = _interopRequireDefault(_gameState);
 
-	var _circle = __webpack_require__(9);
+	var _circle = __webpack_require__(10);
 
 	var _circle2 = _interopRequireDefault(_circle);
 
@@ -64,28 +64,60 @@
 
 	console.log('hello world from ' + __dirname);
 
-	var b = void 0;
-	var c = void 0;
+	var b = void 0,
+	    c = void 0;
+	var lastFrameTime = 0;
 
 	window.onload = function () {
-	  b = new _board2.default('#content');
-	  c = new _canvas2.default(b, ["circle", "attack"]);
-	  var i = 0;
-	  setTimeout(function () {
-	    setInterval(function () {
-	      update();
-	      render();
-	      i++;
-	    }, 30);
-	  }, 0);
+	    b = new _gameState2.default('content');
+	    c = new _canvas2.default(b, ["circle", "attack"]);
+	    requestAnimationFrame(gameLoop);
 	};
-
-	function update() {}
-	function render() {
-	  var svgElements = "<svg width='100%' height='100%'>" + b.render() + c.render() + "</svg>";
-	  $(b.Element).empty();
-	  $(b.Element).append(svgElements);
+	function gameLoop(timeStamp) {
+	    var changeInTime = timeStamp - lastFrameTime;
+	    lastFrameTime = timeStamp;
+	    update(changeInTime);
+	    render();
+	    requestAnimationFrame(gameLoop);
 	}
+
+	function update(time) {
+	    b.update(time);
+	}
+	function render() {
+	    var svgElements = "<svg width='100%' height='100%'>" + b.render() + c.render() + "</svg>";
+	    document.getElementById(b.Element).innerHTML = svgElements;
+	}
+
+	// http://paulirish.com/2011/requestanimationframe-for-smart-animating/
+	// http://my.opera.com/emoller/blog/2011/12/20/requestanimationframe-for-smart-er-animating
+
+	// requestAnimationFrame polyfill by Erik Möller. fixes from Paul Irish and Tino Zijdel
+
+	// MIT license
+
+	(function () {
+	    var lastTime = 0;
+	    var vendors = ['ms', 'moz', 'webkit', 'o'];
+	    for (var x = 0; x < vendors.length && !window.requestAnimationFrame; ++x) {
+	        window.requestAnimationFrame = window[vendors[x] + 'RequestAnimationFrame'];
+	        window.cancelAnimationFrame = window[vendors[x] + 'CancelAnimationFrame'] || window[vendors[x] + 'CancelRequestAnimationFrame'];
+	    }
+
+	    if (!window.requestAnimationFrame) window.requestAnimationFrame = function (callback, element) {
+	        var currTime = new Date().getTime();
+	        var timeToCall = Math.max(0, 16 - (currTime - lastTime));
+	        var id = window.setTimeout(function () {
+	            callback(currTime + timeToCall);
+	        }, timeToCall);
+	        lastTime = currTime + timeToCall;
+	        return id;
+	    };
+
+	    if (!window.cancelAnimationFrame) window.cancelAnimationFrame = function (id) {
+	        clearTimeout(id);
+	    };
+	})();
 	/* WEBPACK VAR INJECTION */}.call(exports, "/"))
 
 /***/ },
@@ -106,9 +138,9 @@
 
 	var _runeData = __webpack_require__(6);
 
-	var _board = __webpack_require__(7);
+	var _gameState = __webpack_require__(7);
 
-	var _board2 = _interopRequireDefault(_board);
+	var _gameState2 = _interopRequireDefault(_gameState);
 
 	var _rune = __webpack_require__(8);
 
@@ -132,82 +164,125 @@
 	  function Canvas(board, runes) {
 	    _classCallCheck(this, Canvas);
 
-	    this.Board = board;
+	    this.GameState = board;
 	    this.Runes = runes;
 	    this.Mode = "COMMAND";
 	    this.CurrentRune = new _rune2.default([]);
+	    this.StrokeId = 0;
+	    this.Recognizer = new _recognizer2.default();
 	    this.enable();
 	  }
 
 	  _createClass(Canvas, [{
-	    key: 'disable',
-	    value: function disable() {
-	      $(document).unbind();
-	      $(this.Board.Element).unbind();
-	    }
-	  }, {
 	    key: 'changeMode',
 	    value: function changeMode(mode) {
 	      this.CurrentRune = new _rune2.default([]);
 	      this.Mode = mode;
-	      this.disable();
-	      this.enable();
 	    }
 	  }, {
 	    key: 'enable',
 	    value: function enable() {
-	      console.log("Re-enabled");
-	      var self = this;
-	      var strokeId = 1;
-	      var recognizer = new _recognizer2.default();
-	      (0, _runeData.getUserRunes)(recognizer, this.Runes);
-	      var DOM = this.Board.Element;
+	      var _this = this;
+
+	      (0, _runeData.getUserRunes)(this.Recognizer, this.Runes);
+	      var DOM = '#' + this.GameState.Element;
 	      $(document).on("keydown", function (key) {
 	        if (key.which == 90) {
 	          //If "z" key held down
 	          //Clear Points
-	          self.CurrentRune.Points = [];
+	          _this.CurrentRune.Points = [];
 	        } else if (key.which == 49) {
 	          //"1" key
 	          //Set to draw mode
-	          self.changeMode("DRAW");
+	          _this.changeMode("DRAW");
 	        } else if (key.which == 50) {
 	          //"2" key
-	          //Set to path mode
-	          self.changeMode("COMMAND");
+	          _this.changeMode("COMMAND");
+	        } else if (key.which == 16 && _this.Mode == "DRAW") {
+	          _this.changeMode("STRAIGHTLINE");
+	        }
+	      });
+	      $(document).on("keyup", function (key) {
+	        if (key.which == 16 && _this.Mode == "STRAIGHTLINE") {
+	          //Shift
+	          _this.changeMode("DRAW");
 	        }
 	      });
 	      $(DOM).on("mousedown", function (mouseDownEvent) {
-	        if (self.Mode == "COMMAND") {
-	          var newSelected = self.Board.selectChalklingAtPoint(new _point2.default(mouseDownEvent.pageX, mouseDownEvent.pageY));
-	          self.Board.Selected = [newSelected];
+	        if (mouseDownEvent.button == 2 && _this.Mode != "SELECTION") {
+	          //Right click
+	          _this.changeMode("SELECTION");
+	        } else if (mouseDownEvent.button == 0 && _this.Mode == "SELECTION") {
+	          //Left click
+	          _this.changeMode("COMMAND");
 	        }
-	        console.log("Mouse down");
+	        _this.doAction(mouseDownEvent, "mousedown");
 	        $(DOM).on("mousemove", function (mouseMoveEvent) {
-	          var parentOffset = $(DOM).offset();
-	          //Offset allows for containers that don't fit thte entire page and work inside the surface.
-	          var relX = mouseMoveEvent.pageX - parentOffset.left;
-	          var relY = mouseMoveEvent.pageY - parentOffset.top;
-	          //Add the new point data
-	          self.CurrentRune.Points.push(new _point2.default(relX, relY, strokeId));
+	          _this.doAction(mouseMoveEvent, "mousemove");
 	        });
 	      });
 	      $(DOM).on("mouseup", function () {
 	        $(DOM).off("mousemove");
-	        if (self.Mode == "DRAW") {
-	          var recognizedResult = recognizer.Recognize(self.CurrentRune.Points);
+	        _this.doAction(null, "mouseup");
+	      });
+	    }
+	  }, {
+	    key: 'doAction',
+	    value: function doAction(passedEvent, type) {
+	      if (this.Mode == "DRAW") {
+	        if (type == "mousemove") {
+	          var mousePosition = this.getMousePosition(passedEvent);
+	          //Add the new point data
+	          this.CurrentRune.Points.push(new _point2.default(mousePosition.X, mousePosition.Y, this.StrokeId));
+	        } else if (type == "mouseup") {
+	          var recognizedResult = this.Recognizer.Recognize(this.CurrentRune.Points);
 	          //WARNING Recognize adds 99-98 more randon points to a point array, which is why I made a clone of of the points and then recognized the clone.
 	          if (recognizedResult.Score > 0.1) {
 	            //If they just drew something
-	            self.Board.newRune(recognizedResult.Name, self.CurrentRune.Points, "blu");
-	            self.CurrentRune = new _rune2.default([]);
+	            this.GameState.newRune(recognizedResult.Name, this.CurrentRune.Points, "blue");
+	            this.CurrentRune = new _rune2.default([]);
 	          }
-	          strokeId++;
-	        } else if (self.Mode == "COMMAND") {
-	          self.Board.moveChalklingAlongPath(self.CurrentRune.Points);
-	          self.CurrentRune = new _rune2.default([]);
+	          this.StrokeId++;
 	        }
-	      });
+	      } else if (this.Mode == "SELECTION") {
+	        if (type == "mousedown") {
+	          this.CurrentRune = new _rune2.default([this.getMousePosition(passedEvent)]);
+	        } else if (type == "mousemove") {
+	          var startPos = this.CurrentRune.Points[0];
+	          var currentPos = this.getMousePosition(passedEvent);
+	          this.CurrentRune.Points = [startPos, new _point2.default(startPos.X, currentPos.Y), currentPos, new _point2.default(currentPos.X, startPos.Y), startPos];
+	        } else if (type == "mouseup") {
+	          this.GameState.selectChalklingsInRect(this.CurrentRune.Points[0], this.CurrentRune.Points[2]);
+	          this.CurrentRune = new _rune2.default([]);
+	        }
+	      } else if (this.Mode == "COMMAND") {
+	        if (type == "mousedown") {} else if (type == "mousemove") {
+	          var _mousePosition = this.getMousePosition(passedEvent);
+	          //Add the new point data
+	          this.CurrentRune.Points.push(new _point2.default(_mousePosition.X, _mousePosition.Y, this.StrokeId));
+	        } else if (type == "mouseup") {
+	          this.GameState.moveSelectedAlongPath(this.CurrentRune.Points);
+	          this.CurrentRune = new _rune2.default([]);
+	        }
+	      } else if (this.Mode == "STRAIGHTLINE") {
+	        if (type == "mousedown") {
+	          this.CurrentRune = new _rune2.default([this.getMousePosition(passedEvent)]);
+	        } else if (type == "mousemove") {
+	          this.CurrentRune.Points[1] = this.getMousePosition(passedEvent);
+	        } else if (type == "mouseup") {
+	          this.GameState.newRune("line", this.CurrentRune.Points, "ALKJADLSK");
+	        }
+	      }
+	    }
+	  }, {
+	    key: 'getMousePosition',
+	    value: function getMousePosition(passedEvent) {
+
+	      var parentOffset = $("#" + this.GameState.Element).offset();
+	      //Offset allows for containers that don't fit thte entire page and work inside the surface.
+	      var relX = passedEvent.pageX - parentOffset.left;
+	      var relY = passedEvent.pageY - parentOffset.top;
+	      return new _point2.default(relX, relY);
 	    }
 	  }, {
 	    key: 'render',
@@ -215,15 +290,18 @@
 	      var path = void 0;
 	      switch (this.Mode) {
 	        case "DRAW":
-	          path = this.CurrentRune.render();
+	          path = this.CurrentRune.render("FILL");
 	          break;
 	        case "COMMAND":
-	          path = this.CurrentRune.render("PATH");
+	          path = this.CurrentRune.render("DASH");
+	          break;
+	        case "SELECTION":
+	          path = this.CurrentRune.render("FADE");
 	          break;
 	        default:
 	          path = this.CurrentRune.render();
 	      }
-	      return path;
+	      return path.RenderString;
 	    }
 	  }]);
 
@@ -687,19 +765,31 @@
 
 	var _rune2 = _interopRequireDefault(_rune);
 
-	var _circle = __webpack_require__(9);
+	var _circle = __webpack_require__(10);
 
 	var _circle2 = _interopRequireDefault(_circle);
 
-	var _chalklings = __webpack_require__(11);
+	var _chalklings = __webpack_require__(13);
 
-	var _sat = __webpack_require__(10);
+	var _sat = __webpack_require__(12);
 
 	var SAT = _interopRequireWildcard(_sat);
 
-	var _chalkling = __webpack_require__(12);
+	var _chalkling = __webpack_require__(14);
 
 	var _chalkling2 = _interopRequireDefault(_chalkling);
+
+	var _line = __webpack_require__(15);
+
+	var _line2 = _interopRequireDefault(_line);
+
+	var _renderedElement = __webpack_require__(9);
+
+	var _renderedElement2 = _interopRequireDefault(_renderedElement);
+
+	var _selectedOverlay = __webpack_require__(16);
+
+	var _selectedOverlay2 = _interopRequireDefault(_selectedOverlay);
 
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
@@ -707,20 +797,19 @@
 
 	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
-	var Board = function () {
-	  function Board(element) {
-	    _classCallCheck(this, Board);
+	var GameState = function () {
+	  function GameState(element) {
+	    _classCallCheck(this, GameState);
 
 	    this.Element = element;
-	    this.Contains = [new _chalklings.Testling(1, "red", new _point2.default(300, 0)), new _circle2.default([new _point2.default(100, 0, 1), new _point2.default(170, 39, 1), new _point2.default(200, 100, 1), new _point2.default(170, 170, 1), new _point2.default(100, 200, 1), new _point2.default(39, 170, 1), new _point2.default(0, 100, 1), new _point2.default(39, 39, 1), new _point2.default(100, 0, 1)], 2)];
+	    this.Contains = [new _chalklings.Testling(1, "red", new _point2.default(300, 0)), new _circle2.default([new _point2.default(100, 0, 1), new _point2.default(170, 39, 1), new _point2.default(200, 100, 1), new _point2.default(170, 170, 1), new _point2.default(100, 200, 1), new _point2.default(39, 170, 1), new _point2.default(0, 100, 1), new _point2.default(39, 39, 1), new _point2.default(100, 0, 1)], 2, "red")];
 	    this.Selected = [];
-	    console.log(this.Contains[0]);
-	    this.Contains[0].moveTo(new _point2.default(0, 0));
-	    this.Contains[1].moveTo(new _point2.default(600, 0));
+	    this.Contains[0].moveTo(new _point2.default(300, 300));
+	    this.Contains[1].moveTo(new _point2.default(300, 600));
 	    this.IDGenerator = this.getId();
 	  }
 
-	  _createClass(Board, [{
+	  _createClass(GameState, [{
 	    key: 'getId',
 	    value: regeneratorRuntime.mark(function getId() {
 	      var index;
@@ -751,14 +840,20 @@
 	      }, getId, this);
 	    })
 	  }, {
-	    key: 'newCircle',
-	    value: function newCircle(circle) {
-	      var allCircles = [];
+	    key: 'getCircles',
+	    value: function getCircles() {
+	      var circles = [];
 	      this.getBinded(function (rune) {
 	        if (rune.constructor.name == "Circle") {
-	          allCircles.push(rune);
+	          circles.push(rune);
 	        }
 	      });
+	      return circles;
+	    }
+	  }, {
+	    key: 'newCircle',
+	    value: function newCircle(circle) {
+	      var allCircles = this.getCircles();
 	      var mostLikelyCircle = void 0;
 	      var mostLikelyCircleError = Infinity;
 	      for (var i = 0; i < allCircles.length; i++) {
@@ -788,18 +883,32 @@
 	    value: function newRune(name, points, team) {
 	      switch (name) {
 	        case "circle":
-	          var circle = new _circle2.default(points, this.IDGenerator.next());
+	          var circle = new _circle2.default(points, this.IDGenerator.next(), "blue");
 	          this.newCircle(circle);
 	          break;
 	        case "attack":
 	          this.Contains.push(new _chalklings.Testling(this.IDGenerator.next(), team, new _point2.default(coord.Centroid(points).X, coord.Centroid(points).Y)));
+	          break;
+	        case "line":
+	          var distance = coord.Distance(points[0], points[1]);
+	          var lines = [];
+	          for (var i = 0; i < distance / 10; i++) {
+	            var point1 = coord.movePointAlongLine(points[0], points[1], i * 10);
+	            var point2 = coord.movePointAlongLine(points[0], points[1], (i + 1) * 10);
+	            var line = new _line2.default(point1, point2, this.IDGenerator.next(), team);
+	            lines.push(line);
+	            //TODO: Don't just push it randomly
+	            this.Contains.push(line);
+	          }
+	          //TODO: Check the first, last, and middle lines to circle bind points and then bind them.
+	          break;
 	        default:
 
 	      }
 	    }
 	  }, {
-	    key: 'moveChalklingAlongPath',
-	    value: function moveChalklingAlongPath(path) {
+	    key: 'moveSelectedAlongPath',
+	    value: function moveSelectedAlongPath(path) {
 	      if (this.Selected[0] != null) {
 	        for (var i = 0; i < this.Selected.length; i++) {
 	          var currentSelected = this.Selected[i];
@@ -811,35 +920,44 @@
 	    key: 'getBinded',
 	    value: function getBinded() {
 	      var callback = arguments.length <= 0 || arguments[0] === undefined ? function () {} : arguments[0];
-	      //depth-first search
+	      var parent = arguments.length <= 1 || arguments[1] === undefined ? false : arguments[1];
+	      //depth-first search.
+	      //If parent is true, the callback will be function(parent, child)
 	      var binded = [];
 	      for (var i = 0; i < this.Contains.length; i++) {
-	        this.getBindedIncursion(this.Contains[i], binded, callback);
+	        this.getBindedIncursion(this.Contains[i], binded, callback, parent);
 	      }
 	      return binded;
 	    }
 	  }, {
 	    key: 'getBindedIncursion',
-	    value: function getBindedIncursion(rune, binded, callback) {
+	    value: function getBindedIncursion(rune, binded, callback, parent) {
 	      if (typeof rune.HasBinded != "undefined") {
 	        //has binded stuff, find it recursively
+	        if (parent) {
+	          callback(rune);
+	        }
 	        for (var i = 0; i < rune.HasBinded.length; i++) {
-	          this.getBindedIncursion(rune.HasBinded[i], binded, callback);
+	          this.getBindedIncursion(rune.HasBinded[i], binded, callback, parent);
 	        }
 	        binded.push(rune);
 	      } else {
 	        binded.push(rune);
 	      }
-	      callback(rune);
+	      if (!parent) {
+	        callback(rune);
+	      }
 	    }
 	  }, {
 	    key: 'removeDeadChalklings',
 	    value: function removeDeadChalklings() {
-	      var self = this;
+	      var _this = this;
+
 	      this.getBinded(function (rune) {
-	        if (self.isChalkling(rune)) {
+	        if (_this.isChalkling(rune)) {
 	          if (rune.CurrentAction == "DEATH") {
-	            this.Contains.splice(this.Contains.indexOf(rune), 1); //If the chalkling is dead, removes is from board.
+	            _this.Contains.splice(_this.Contains.indexOf(rune), 1); //If the chalkling is dead, removes is from board.
+	            _this.Selected.splice(_this.Contains.indexOf(rune), 1); //Also, make sure you unselect it.
 	          }
 	        }
 	      });
@@ -848,20 +966,22 @@
 	    key: 'updateChalklingView',
 	    value: function updateChalklingView() {
 	      //Updates what each chalkling can see.
-	      var chalklings = [];
-	      var self = this;
-	      this.getBinded(function (rune) {
-	        if (self.isChalkling(rune)) {
-	          chalklings.push(rune);
-	        }
-	      });
-	      for (var j = 0; j < chalklings.length; j++) {
-	        for (var k = 0; k < chalklings.length; k++) {
-	          var currentDistance = coord.Distance(chalklings[j].Position, chalklings[k].Position);
-	          if (currentDistance < chalklings[j].Attributes.ViewRange) {
-	            chalklings[j].Sees.push(chalklings[k]);
+	      var runes = this.getBinded();
+	      for (var j = 0; j < runes.length; j++) {
+	        var newSees = [];
+	        for (var k = 0; k < runes.length; k++) {
+	          if (j == k) {
+	            //Don't add ourselves to what we see.
+	            continue;
+	          }
+	          if (this.isChalkling(runes[j])) {
+	            var currentDistance = coord.Distance(runes[j].Position, runes[k].Position);
+	            if (currentDistance < runes[j].Attributes.ViewRange) {
+	              newSees.push(runes[k]);
+	            }
 	          }
 	        }
+	        runes[j].Sees = newSees;
 	      }
 	    }
 	  }, {
@@ -881,7 +1001,6 @@
 	          var response = new SAT.Response();
 	          var entity1 = runes[i];
 	          var entity2 = runes[j];
-	          response.clear();
 	          var BOUNCE = 1.1;
 	          if (entity1.constructor.name == "Circle" || entity2.constructor.name == "Circle") {
 	            //One's a circle
@@ -890,7 +1009,6 @@
 	            } else if (this.isChalkling(entity1)) {
 	              //1 is chalkling, 2 is circle
 	              if (SAT.testPolygonPolygon(new B(new V(entity1.TopLeft.X, entity1.TopLeft.Y), 100, 100).toPolygon(), entity2.toSATPolygon(), response)) {
-
 	                entity1.Position.X -= response.overlapV.x + 1 * BOUNCE;
 	                entity1.Position.Y -= response.overlapV.y + 1 * BOUNCE;
 	                //Stop the chalkling from walking, so it doesn't get stuck there.
@@ -899,75 +1017,190 @@
 	            } else if (this.isChalkling(entity2)) {
 	              //2 is chalkling, 1 is circle
 	              if (SAT.testPolygonPolygon(new B(new V(entity2.TopLeft.X, entity2.TopLeft.Y), 100, 100).toPolygon(), entity1.toSATPolygon(), response)) {
-	                entity2.Position.X -= response.overlapV.x + 1 * BOUNCE;
 	                entity2.Position.Y -= response.overlapV.y + 1 * BOUNCE;
-
 	                entity2.override();
 	              }
 	            } else {//It's a circle and something else, do nothing
 
 	            }
-	          } else if (this.isChalkling(entity1) && this.isChalkling(entity2)) {
-	            //Both are chalklings
+	          } else if (this.isChalkling(entity1) && this.isChalkling(entity2)) {//Both are chalklings
+
+	            //For now, it's ok for them to overlap. Uncomment if you want them not to.
+	            /*
 	            //Create a bounding box around chalkling
-	            var firstChalklingBox = new B(new V(entity1.TopLeft.X, entity1.TopLeft.Y), 100, 100).toPolygon();
-	            var secondChalklingBox = new B(new V(entity2.TopLeft.X, entity2.TopLeft.Y), 100, 100).toPolygon();
-	            var collided = SAT.testPolygonPolygon(firstChalklingBox, secondChalklingBox, response);
-	            if (collided) {
-	              var collidedVector = response.overlapV.scale(0.6); //How much they overlap
-	              entity1.Position.X -= collidedVector.x;
-	              entity1.Position.Y -= collidedVector.y;
-	              entity2.Position.X += collidedVector.x;
-	              entity2.Position.Y += collidedVector.y;
+	            let firstChalklingBox = new B(new V(entity1.TopLeft.X, entity1.TopLeft.Y), 100, 100).toPolygon();
+	            let secondChalklingBox = new B(new V(entity2.TopLeft.X, entity2.TopLeft.Y), 100, 100).toPolygon();
+	            let collided = SAT.testPolygonPolygon(firstChalklingBox, secondChalklingBox, response);
+	            if(collided){
+	              let collidedVector = response.overlapV.scale(0.5); //How much they overlap
+	              entity1.Position.X -=collidedVector.x;
+	              entity1.Position.Y -=collidedVector.y;
+	              entity2.Position.X +=collidedVector.x;
+	              entity2.Position.Y +=collidedVector.y;
 	            }
+	            */
 	          }
 	        }
 	      }
 	    }
 	  }, {
+	    key: 'removeDeadBindedRunes',
+	    value: function removeDeadBindedRunes(runeType) {
+	      for (var j = 0; j < this.Contains.length; j++) {
+	        if (this.Contains[j].constructor.name == runeType) {
+	          if (this.Contains[j].Attributes.Health <= 0) {
+	            this.Contains.splice(j, 1);
+	          }
+	        }
+	      }
+	      this.getBinded(function (parent) {
+	        //This will remove circles that are binded. We also need to check the top-level circles as well (done above).
+	        for (var i = 0; i < parent.HasBinded.length; i++) {
+	          if (parent.HasBinded[i].Attributes.Health <= 0) {
+	            parent.HasBinded.splice(i, 1);
+	          }
+	        }
+	      }, true);
+	    }
+	  }, {
 	    key: 'selectChalklingAtPoint',
 	    value: function selectChalklingAtPoint(point) {
+	      var _this2 = this;
+
 	      var V = SAT.Vector;
 	      var B = SAT.Box;
 	      var vecPoint = new V(point.X, point.Y);
 	      var chalkling = null;
-	      var self = this;
 	      this.getBinded(function (rune) {
-	        if (self.isChalkling(rune)) {
+	        if (_this2.isChalkling(rune)) {
 	          if (SAT.pointInPolygon(vecPoint, new B(new V(rune.TopLeft.X, rune.TopLeft.Y), 100, 100).toPolygon())) {
 	            chalkling = rune;
 	          }
 	        }
 	      });
-	      return chalkling;
+	      this.Selected = [chalkling];
+	    }
+	  }, {
+	    key: 'selectChalklingsInRect',
+	    value: function selectChalklingsInRect(point1, point2) {
+	      var _this3 = this;
+
+	      var V = SAT.Vector;
+	      var B = SAT.Box;
+	      var lesserX = point1.X > point2.X ? point2.X : point1.X;
+	      var lesserY = point1.Y > point2.Y ? point2.Y : point1.Y;
+	      var greaterX = point1.X < point2.X ? point2.X : point1.X;
+	      var greaterY = point1.Y < point2.Y ? point2.Y : point1.Y;
+	      var selected = [];
+	      this.getBinded(function (rune) {
+	        if (_this3.isChalkling(rune)) {
+	          var vecPoint = new V(rune.Position.X, rune.Position.Y);
+	          if (SAT.pointInPolygon(vecPoint, new B(new V(lesserX, lesserY), greaterX - lesserX, greaterY - lesserY).toPolygon())) {
+	            selected.push(rune);
+	          }
+	        }
+	      });
+	      this.Selected = selected;
 	    }
 	  }, {
 	    key: 'isChalkling',
 	    value: function isChalkling(rune) {
-	      if (rune.prototype instanceof _chalkling2.default) {
+	      if (rune.__proto__ instanceof _chalkling2.default) {
 	        return true;
 	      } else {
 	        return false;
 	      }
 	    }
 	  }, {
-	    key: 'render',
-	    value: function render() {
+	    key: 'renderSelected',
+	    value: function renderSelected() {
+	      var selectedArray = [];
+	      for (var i = 0; i < this.Selected.length; i++) {
+	        var currentRunePosition = this.Selected[i].TopLeft;
+	        selectedArray.push(new _selectedOverlay2.default(currentRunePosition));
+	      }
+	      return selectedArray;
+	    }
+	  }, {
+	    key: 'update',
+	    value: function update(time) {
 	      this.removeDeadChalklings();
 	      this.updateHitboxes();
 	      this.updateChalklingView();
-	      var renderString = '';
+	      this.removeDeadBindedRunes("Circle");
+	      this.removeDeadBindedRunes("Line");
 	      this.getBinded(function (rune) {
-	        renderString += rune.render();
+	        if (typeof rune.update != "undefined") {
+	          rune.update(time);
+	        }
 	      });
+	    }
+	  }, {
+	    key: 'render',
+	    value: function render() {
+	      var renderedElements = [];
+	      var allRunes = this.getBinded();
+	      allRunes = allRunes.concat(this.renderSelected());
+	      var _iteratorNormalCompletion = true;
+	      var _didIteratorError = false;
+	      var _iteratorError = undefined;
+
+	      try {
+	        for (var _iterator = allRunes[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
+	          var rune = _step.value;
+
+	          var runeElements = rune.render();
+	          for (var _i = 0; _i < runeElements.length; _i++) {
+	            //Some render functions return multiple renderedElements, so go through all of them.
+	            var tempElement = runeElements[_i];
+	            var order = devConfig.renderOrder[tempElement.Type]; //Get the render order based on the current rune's type
+	            if (renderedElements.length == 0) {
+	              renderedElements.push(tempElement);
+	            } else {
+	              var inserted = false;
+	              for (var j = 0; j < renderedElements.length; j++) {
+	                var checkedElementOrder = devConfig.renderOrder[renderedElements[j].Type];
+	                if (order < checkedElementOrder) {
+	                  //We've searched too far in the array and found people with higher rendering order.
+	                  renderedElements.splice(j, 0, tempElement); //Insert us at the end of our rendering section.
+	                  inserted = true;
+	                  break;
+	                }
+	              }
+	              if (!inserted) {
+	                //We are on the top of the rendering queue.
+	                renderedElements.push(tempElement);
+	              }
+	            }
+	          }
+	        }
+	      } catch (err) {
+	        _didIteratorError = true;
+	        _iteratorError = err;
+	      } finally {
+	        try {
+	          if (!_iteratorNormalCompletion && _iterator.return) {
+	            _iterator.return();
+	          }
+	        } finally {
+	          if (_didIteratorError) {
+	            throw _iteratorError;
+	          }
+	        }
+	      }
+
+	      var renderString = '';
+	      for (var i = 0; i < renderedElements.length; i++) {
+	        renderString += renderedElements[i].RenderString;
+	      }
 	      return renderString;
 	    }
 	  }]);
 
-	  return Board;
+	  return GameState;
 	}();
 
-	exports.default = Board;
+	exports.default = GameState;
 
 /***/ },
 /* 8 */
@@ -990,6 +1223,10 @@
 	var _coord = __webpack_require__(3);
 
 	var coord = _interopRequireWildcard(_coord);
+
+	var _renderedElement = __webpack_require__(9);
+
+	var _renderedElement2 = _interopRequireDefault(_renderedElement);
 
 	function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
 
@@ -1034,14 +1271,17 @@
 	        }
 	      }
 	      switch (mode) {
-	        case "DRAW":
-	          return '<path stroke="black" fill="none" stroke-width = "1" d="' + svgPathString + '"></path>';
+	        case "FILL":
+	          return new _renderedElement2.default('<path stroke="black" fill="none" stroke-width = "1" d="' + svgPathString + '"></path>', "Rune");
 	          break;
-	        case "PATH":
-	          return '<path stroke="black" stroke-dasharray= "5,5" fill="none" stroke-width = "1" d="' + svgPathString + '"></path>';
+	        case "DASH":
+	          return new _renderedElement2.default('<path stroke="black" stroke-dasharray= "5,5" fill="none" stroke-width = "1" d="' + svgPathString + '"></path>', "Rune");
+	          break;
+	        case "FADE":
+	          return new _renderedElement2.default('<path stroke="grey" fill="none" stroke-width = "1" d="' + svgPathString + '"></path>', "Rune");
 	          break;
 	        default:
-	          return '<path stroke="black" fill="none" stroke-width = "1" d="' + svgPathString + '"></path>';
+	          return new _renderedElement2.default('<path stroke="black" fill="none" stroke-width = "1" d="' + svgPathString + '"></path>', "Rune");
 
 	      }
 	    }
@@ -1054,6 +1294,29 @@
 
 /***/ },
 /* 9 */
+/***/ function(module, exports) {
+
+	"use strict";
+
+	Object.defineProperty(exports, "__esModule", {
+	  value: true
+	});
+
+	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+	var RenderedElement = function RenderedElement(renderString) {
+	  var type = arguments.length <= 1 || arguments[1] === undefined ? "Rune" : arguments[1];
+
+	  _classCallCheck(this, RenderedElement);
+
+	  this.Type = type;
+	  this.RenderString = renderString;
+	};
+
+	exports.default = RenderedElement;
+
+/***/ },
+/* 10 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -1068,9 +1331,9 @@
 
 	var _recognizer2 = _interopRequireDefault(_recognizer);
 
-	var _rune = __webpack_require__(8);
+	var _unit = __webpack_require__(11);
 
-	var _rune2 = _interopRequireDefault(_rune);
+	var _unit2 = _interopRequireDefault(_unit);
 
 	var _coord = __webpack_require__(3);
 
@@ -1080,9 +1343,17 @@
 
 	var _point2 = _interopRequireDefault(_point);
 
-	var _sat = __webpack_require__(10);
+	var _sat = __webpack_require__(12);
 
 	var SAT = _interopRequireWildcard(_sat);
+
+	var _renderedElement = __webpack_require__(9);
+
+	var _renderedElement2 = _interopRequireDefault(_renderedElement);
+
+	var _rune = __webpack_require__(8);
+
+	var _rune2 = _interopRequireDefault(_rune);
 
 	function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
 
@@ -1094,18 +1365,42 @@
 
 	function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
 
-	var Circle = function (_Rune) {
-		_inherits(Circle, _Rune);
+	var Circle = function (_Unit) {
+		_inherits(Circle, _Unit);
 
-		function Circle(Points, ID) {
+		function Circle(points, id, player) {
 			_classCallCheck(this, Circle);
 
-			//Close the points
-			var _this = _possibleConstructorReturn(this, Object.getPrototypeOf(Circle).call(this, Points, ID));
+			points.push(points[0]);
+			//Close the circle
 
-			_this.Points.push(Points[0]);
-			_this.Position = new _point2.default(coord.Centroid(_this.Points).X, coord.Centroid(_this.Points).Y);
-			_this.Radius = _this.averageDistanceFromCenter();
+			var position = coord.Centroid(points);
+
+			//Find the average distance (radius)
+			var distances = 0;
+			for (var i = 0; i < points.length; i++) {
+				distances += coord.Distance(position, points[i]);
+			}
+			var radius = distances / points.length;
+			points = coord.Resample(points, Math.round(radius));
+			var MAX = Math.round(radius) * 10; //Health is related to the number of points (10 health per point) which is the Radius. E.g bigger circle = more points = more health
+			var health = MAX;
+			for (var _i = 0; _i < points.length; _i++) {
+				//Deduct health for each point that's off center.
+				var distance = coord.Distance(points[_i], position);
+				health -= distance / radius;
+				//This means that a big circle will allow for more error.
+			}
+			var attr = {
+				"MaxHealth": MAX,
+				"Health": health
+			};
+
+			var _this = _possibleConstructorReturn(this, Object.getPrototypeOf(Circle).call(this, "Circle", id, player, position, attr));
+
+			_this.Points = points;
+			_this.Radius = radius;
+
 			_this.HasBinded = [];
 			return _this;
 		}
@@ -1179,24 +1474,99 @@
 		}, {
 			key: 'render',
 			value: function render() {
-				//Render functions return svg path strings
 				var radius = this.Radius;
 				var r = radius.toString();
+
+				var healthRatio = 1 - this.Attributes.Health / this.Attributes.MaxHealth;
+				var strokeColor = "rgb(" + Math.round(healthRatio * 255).toString() + "," + Math.round(255 * (1 - healthRatio)).toString() + ",0)";
+
 				//perfectCircle is the perfect circle shown for clarity
 				//Circle formula for paths found here: http://stackoverflow.com/questions/5737975/circle-drawing-with-svgs-arc-path/10477334#10477334
-				var perfectCircle = "<path fill='none' stroke='#af9e9e' strokewidth=3 d='M" + this.Position.X + " " + this.Position.Y + "m" + (-1 * radius).toString() + " 0a" + r + "," + r + " 0 1,0 " + (radius * 2).toString() + ",0" + "a " + r + "," + r + " 0 1,0 " + (radius * -2).toString() + ",0" + "'></path>";
+				var perfectCircle = "<path fill='none' stroke='" + strokeColor + "' strokewidth=3 d='M" + this.Position.X + " " + this.Position.Y + "m" + (-1 * radius).toString() + " 0a" + r + "," + r + " 0 1,0 " + (radius * 2).toString() + ",0" + "a " + r + "," + r + " 0 1,0 " + (radius * -2).toString() + ",0" + "'></path>";
 				var realCircle = new _rune2.default(this.Points).render();
-				return perfectCircle + realCircle;
+				realCircle.Type = "CirclePoints";
+				return [new _renderedElement2.default(perfectCircle, "CircleTrue"), realCircle];
 			}
 		}]);
 
 		return Circle;
-	}(_rune2.default);
+	}(_unit2.default);
 
 	exports.default = Circle;
 
 /***/ },
-/* 10 */
+/* 11 */
+/***/ function(module, exports) {
+
+	"use strict";
+
+	Object.defineProperty(exports, "__esModule", {
+	  value: true
+	});
+
+	var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+
+	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+	var Unit = function () {
+	  function Unit(name, id, player, position, attributes) {
+	    _classCallCheck(this, Unit);
+
+	    this.Name = name;
+	    this.ID = id;
+	    this.Player = player;
+	    this.Position = position;
+	    this.Attributes = attributes;
+	    this.Attributes.Health = this.Attributes.MaxHealth;
+	  }
+
+	  _createClass(Unit, [{
+	    key: "hasTags",
+	    value: function hasTags() {
+	      var tagsMatch = 0;
+
+	      for (var _len = arguments.length, tags = Array(_len), _key = 0; _key < _len; _key++) {
+	        tags[_key] = arguments[_key];
+	      }
+
+	      for (var i = 0; i < this.Attributes.Tags; i++) {
+	        for (var j = 0; j < tagslength; j++) {
+	          if (this.Attributes.Tags[i] == tags[j]) {
+	            tagsMatch++;
+	            if (tagsMatch == tags.length) {
+	              return true;
+	            }
+	          }
+	        }
+	      }
+	      return false;
+	    }
+	  }, {
+	    key: "hasTag",
+	    value: function hasTag(tag) {
+	      for (var i = 0; i < this.Attributes.Tags; i++) {
+	        if (this.Attributes.Tags[i] == tag) {
+	          return true;
+	        }
+	      }
+	      return false;
+	    }
+	    /*
+	    Possible Tags include:
+	      Hidden
+	      Mobile
+	      Destructible
+	    */
+
+	  }]);
+
+	  return Unit;
+	}();
+
+	exports.default = Unit;
+
+/***/ },
+/* 12 */
 /***/ function(module, exports) {
 
 	// Version 0.5.0 - Copyright 2012 - 2015 -  Jim Riecken <jimr@jimr.ca>
@@ -2176,27 +2546,19 @@
 	SAT['testPolygonPolygon'] = testPolygonPolygon;
 
 /***/ },
-/* 11 */
+/* 13 */
 /***/ function(module, exports, __webpack_require__) {
 
-	'use strict';
+	"use strict";
 
 	Object.defineProperty(exports, "__esModule", {
 	  value: true
 	});
 	exports.Testling = undefined;
 
-	var _chalkling = __webpack_require__(12);
+	var _chalkling = __webpack_require__(14);
 
 	var _chalkling2 = _interopRequireDefault(_chalkling);
-
-	var _attributeSet = __webpack_require__(13);
-
-	var _attributeSet2 = _interopRequireDefault(_attributeSet);
-
-	var _point = __webpack_require__(4);
-
-	var _point2 = _interopRequireDefault(_point);
 
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
@@ -2212,14 +2574,51 @@
 	  function Testling(id, player, position) {
 	    _classCallCheck(this, Testling);
 
-	    return _possibleConstructorReturn(this, Object.getPrototypeOf(Testling).call(this, "Testling", id, player, position, new _attributeSet2.default(100, 10, 1000, 3000, 200, 100)));
+	    return _possibleConstructorReturn(this, Object.getPrototypeOf(Testling).call(this, "Testling", id, player, position, {
+	      "MaxHealth": 100,
+	      "Attack": 10,
+	      "AttackRange": 200,
+	      "MovementSpeed": 100,
+	      "ViewRange": 3000,
+	      "AnimationData": {
+	        "IDLE": {
+	          "Frames": 1,
+	          "Time": 1000,
+	          "Size": {
+	            "X": 259,
+	            "Y": 194
+	          }
+	        },
+	        "WALK": {
+	          "Frames": 6,
+	          "Time": 800,
+	          "Size": {
+	            "X": 1500,
+	            "Y": 250
+	          }
+	        },
+	        "ATTACK": {
+	          "Frames": 83,
+	          "Time": 10000,
+	          "Size": {
+	            "X": 124500,
+	            "Y": 1000
+	          } },
+	        "DYING": {
+	          "Frames": 19,
+	          "Time": 1000,
+	          "Width": 350
+	        }
+	      },
+	      "Tags": ["Mobile", "Destructible"]
+	    }));
 	  }
 
 	  return Testling;
 	}(_chalkling2.default);
 
 /***/ },
-/* 12 */
+/* 14 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -2238,28 +2637,40 @@
 
 	var _point2 = _interopRequireDefault(_point);
 
+	var _renderedElement = __webpack_require__(9);
+
+	var _renderedElement2 = _interopRequireDefault(_renderedElement);
+
+	var _unit = __webpack_require__(11);
+
+	var _unit2 = _interopRequireDefault(_unit);
+
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 	function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
 
 	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
-	var Chalkling = function () {
-	  function Chalkling(name, id, player, position, attributeSet, animationData) {
+	function _possibleConstructorReturn(self, call) { if (!self) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return call && (typeof call === "object" || typeof call === "function") ? call : self; }
+
+	function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
+
+	var Chalkling = function (_Unit) {
+	  _inherits(Chalkling, _Unit);
+
+	  function Chalkling(name, id, player, position, attributeSet) {
 	    _classCallCheck(this, Chalkling);
 
-	    this.Name = name;
-	    this.Player = player;
-	    this.ID = id;
-	    this.Position = position;
-	    this.Attributes = attributeSet;
-	    this.CurrentAction = "IDLE";
-	    this.Frame = 0;
-	    this.Sees = [];
-	    this.AnimationEnd = -1;
-	    this.Target = null;
-	    this.Path = [];
-	    this.TopLeft = new _point2.default(this.Position.X - 50, this.Position.Y - 50);
+	    var _this = _possibleConstructorReturn(this, Object.getPrototypeOf(Chalkling).call(this, name, id, player, position, attributeSet));
+
+	    _this.CurrentAction = "IDLE";
+	    _this.Frame = 0;
+	    _this.Sees = [];
+	    _this.TimeSinceAnimationStarted = 0;
+	    _this.Target = null;
+	    _this.Path = [];
+	    _this.TopLeft = new _point2.default(_this.Position.X - 50, _this.Position.Y - 50);
+	    return _this;
 	  }
 
 	  _createClass(Chalkling, [{
@@ -2268,17 +2679,23 @@
 	      //Example path: ./chalklings/Testling/Animations/Idle/X
 	      var pathToAnimation = '';
 	      switch (this.CurrentAction) {
+	        /*
+	        The reason for the frame+1 and parenthesis is because I can take a group of png files, selected them all, and then rename using f2/
+	        If I put no name in, it names them (1), (2), etc.
+	         */
 	        case "IDLE":
-	          pathToAnimation = './chalklings/' + this.Name + '/Animations/Idle/' + this.Frame + ".png";
+	          pathToAnimation = './chalklings/' + this.Name + '/Animations/Idle.png';
 	          break;
 	        case "WALK":
-	          pathToAnimation = './chalklings/' + this.Name + '/Animations/Walk/' + this.Frame + ".png";
+	          pathToAnimation = './chalklings/' + this.Name + '/Animations/Walk.png';
 	          break;
 	        case "ATTACK":
-	          pathToAnimation = './chalklings/' + this.Name + '/Animations/Attack/' + this.Frame + ".png";
+	          pathToAnimation = './chalklings/' + this.Name + '/Animations/Attack.png';
+	          break;
+	        case "DYING":
+	          pathToAnimation = './chalklings/' + this.Name + '/Animations/Dying/(' + (this.Frame + 1) + ").png";
 	          break;
 	        case "DEATH":
-	          pathToAnimation = './chalklings/' + this.Name + '/Animations/Death/' + this.Frame + ".png";
 	          break;
 	        case "FINISHER":
 	          pathToAnimation = './chalklings/' + this.Name + '/Animations/Finishers/' + this.Target.Name + '/' + this.Frame + ".png";
@@ -2294,6 +2711,7 @@
 	  }, {
 	    key: 'moveTo',
 	    value: function moveTo(position) {
+	      this.Target = null;
 	      this.CurrentAction = "WALK";
 	      this.Path = [position];
 	    }
@@ -2301,13 +2719,16 @@
 	    key: 'moveAlongPath',
 	    value: function moveAlongPath(path) {
 	      //Path is array of points
+	      this.Target = null;
 	      this.CurrentAction = "WALK";
 	      this.Path = path;
 	    }
 	  }, {
 	    key: 'die',
 	    value: function die() {
-	      this.CurrentAction = "DEATH";
+	      this.CurrentAction = "DYING";
+	      this.Frame = 0;
+	      this.TimeSinceAnimationStarted = 0;
 	      console.log("A " + this.Player + " " + this.Name + " has died!");
 	    }
 	  }, {
@@ -2327,34 +2748,49 @@
 	      this.CurrentAction = "IDLE";
 	      this.Path = [];
 	      this.Frame = 0;
+	      this.Target = null;
 	    }
 	  }, {
 	    key: 'update',
-	    value: function update() {
-	      //Update topleft and frame
+	    value: function update(time) {
+	      //Update topleft
 	      this.TopLeft = new _point2.default(this.Position.X - 50, this.Position.Y - 50);
-	      this.Frame++;
-	      if (this.Attributes.Health <= 0) {
-	        //1. Is it dead?
-	        this.die();
-	        return;
-	      }
-	      if (this.Frame >= this.AnimationEnd) {
-	        //2. Is it's action done?
+	      //Calculate the current frame.
+	      var newTime = this.TimeSinceAnimationStarted + time; //Get the new time since the animation started
+	      var numFrames = this.Attributes.AnimationData[this.CurrentAction].Frames;
+	      var animationTime = this.Attributes.AnimationData[this.CurrentAction].Time;
+	      var framesPerSecond = numFrames / animationTime;
+	      this.Frame = Math.min(Math.round(newTime * framesPerSecond), numFrames - 1); //Don't round up if we're out of frames. The -1 is because we start at frame 0;
+	      this.TimeSinceAnimationStarted = newTime;
+
+	      if (newTime > animationTime) {
+	        //Is my animation done?
 	        if (this.CurrentAction == "ATTACK") {
 	          //So I'm attacking someone and I just finished an attack animation. Should I continue?
 	          if (this.Target.Attributes.Health > 0) {
 	            //My enemy is alive! Time to finish the job.
-	            this.CurrentAction = "ATTACK";
 	            this.Target.Attributes.Health -= this.Attributes.Attack;
 	          } else {
 	            this.CurrentAction = "IDLE";
 	          }
+	        } else if (this.CurrentAction == "DYING") {
+	          console.log("DEAD");
+	          this.CurrentAction = "DEATH";
 	        }
 	        this.Frame = 0;
+	        this.TimeSinceAnimationStarted = 0;
 	      }
+	      if (this.CurrentAction == "DYING" || this.CurrentAction == "DEATH") {
+	        return;
+	      }
+	      if (this.Attributes.Health <= 0 && this.CurrentAction != "DYING") {
+	        //Is it dead?
+	        this.die();
+	        return;
+	      }
+
 	      for (var i = 0; i < this.Attributes.Modifiers; i++) {
-	        //3. Can any of it's modifiers be applied?
+	        //Can any of it's modifiers be applied?
 	        var currentModifier = this.Attributes.Modifiers[i];
 	        if (currentModifier.Condition(this) == true) {
 	          currentModifier.AttributeChange(this);
@@ -2362,7 +2798,7 @@
 	      }
 	      if (this.Path.length != 0) {
 	        //Am I currently going somewhere?
-	        var distanceToMove = 33 / 1000 * this.Attributes.MovementSpeed;
+	        var distanceToMove = time / 1000 * this.Attributes.MovementSpeed;
 	        this.Position = coord.movePointAlongLine(this.Position, this.Path[0], distanceToMove);
 	        if (coord.Distance(this.Position, this.Path[0]) < distanceToMove) {
 	          //Did I make it where I need to go?
@@ -2372,24 +2808,37 @@
 	        //Finished my path, go into idle.
 	        this.CurrentAction = "IDLE";
 	      }
-	      if (this.CurrentAction == "IDLE" && this.getNearbyEnemies().length != 0) {
-	        //4. Is there a nearby enemy I can attack?
-	        this.Target = this.getNearbyEnemies()[0];
+	      if (this.Target == null && this.getNearbyEnemies().length != 0 && this.CurrentAction == "IDLE") {
+	        //Is there a nearby enemy I can attack?
+	        var nearbyEnemies = this.getNearbyEnemies();
+	        var closestEnemy = null;
+	        var closestEnemyDistance = Infinity;
+	        for (var _i = 0; _i < nearbyEnemies.length; _i++) {
+	          if (nearbyEnemies[_i].hasTag("Hidden")) {
+	            //Don't bother looking at nearby people if they're hidden.
+	            continue;
+	          }
+	          var currentDistance = coord.Distance(this.Position, nearbyEnemies[_i].Position);
+	          if (currentDistance < closestEnemyDistance) {
+	            closestEnemy = nearbyEnemies[_i];
+	            closestEnemyDistance = currentDistance;
+	          }
+	        }
+	        this.Target = closestEnemy;
 	      }
 	      if (this.Target != null) {
 	        //If there's a target:
-	        if (this.Target.CurrentAction == "DEATH") {
+	        if (this.Target.CurrentAction == "DEATH" || this.Target.Attributes.Health <= 0) {
 	          //Whoops, he's dead. Lets not bother him any more.
 	          this.Target = null;
 	        } else if (coord.Distance(this.Target.Position, this.Position) >= this.Attributes.ViewRange) {
-	          //5. Can i still see the target?
+	          //Can i still see the target?
+	          this.Target = null;
 	          this.CurrentAction = "IDLE";
 	        } else if (coord.Distance(this.Target.Position, this.Position) <= this.Attributes.AttackRange) {
-	          //6. Should I move to follow my target?
+	          //Should I move to follow my target?
 	          if (this.CurrentAction != "ATTACK") {
 	            //If we aren't already attacking...
-	            console.log("EEY");
-
 	            this.Path = [];
 	            this.CurrentAction = "ATTACK";
 	          }
@@ -2403,23 +2852,89 @@
 	  }, {
 	    key: 'render',
 	    value: function render() {
-	      this.update();
-	      var chalklingImage = "<image xlink:href=\"" + this.getAnimation() + "\" x=\"" + this.TopLeft.X.toString() + "\" y=\"" + this.TopLeft.Y.toString() + "\" height=\"100\" width=\"100\" />";
+	      //The way we render only a section of the spritesheet is to embed it in another svg and set the viewbox.
+	      //Other methods here: http://stackoverflow.com/questions/16983442/how-to-specify-the-portion-of-the-image-to-be-rendered-inside-svgimage-tag
+
+	      var totalWidth = this.Attributes.AnimationData[this.CurrentAction].Size.X;
+	      var frameWidth = totalWidth / this.Attributes.AnimationData[this.CurrentAction].Frames;
+	      var frameHeight = this.Attributes.AnimationData[this.CurrentAction].Size.Y;
+	      var viewBox = (frameWidth * this.Frame).toString() + " 0 " + frameWidth.toString() + " " + frameHeight.toString();
+	      var chalklingImage = "<svg x=\"" + this.TopLeft.X + "\" y=\"" + this.TopLeft.Y + "\" width=\"100px\" height=\"100px\" viewBox=\"" + viewBox + "\">" + "<image x=\"0px\" y=\"0px\" width=\"" + totalWidth.toString() + "\" height=\"" + frameHeight + "\" xlink:href=\"" + this.getAnimation() + "\"" + "/></svg>";
 	      var healthBarOutside = '<rect x="' + this.TopLeft.X.toString() + '" y="' + (this.TopLeft.Y + 110).toString() + '" width="100" height="5" fill="green"/>';
-	      var healthRatio = (this.Attributes.MaxHealth - this.Attributes.Health) / this.Attributes.MaxHealth * 100;
+	      var healthRatio = Math.max(0, (this.Attributes.MaxHealth - this.Attributes.Health) / this.Attributes.MaxHealth * 100);
 	      var healthBarLeft = '<rect x="' + (this.TopLeft.X + (100 - healthRatio)).toString() + '" y="' + (this.TopLeft.Y + 110).toString() + '" width="' + healthRatio.toString() + '" height="5" fill="red"/>';
-	      return chalklingImage + healthBarOutside + healthBarLeft;
+	      var healthBarTotal = healthBarOutside + healthBarLeft;
+	      return [new _renderedElement2.default(chalklingImage, "ChalklingImage"), new _renderedElement2.default(healthBarTotal, "ChalklingHealth")];
 	    }
 	  }]);
 
 	  return Chalkling;
-	}();
+	}(_unit2.default);
 
 	exports.default = Chalkling;
 
 /***/ },
-/* 13 */
-/***/ function(module, exports) {
+/* 15 */
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+
+	Object.defineProperty(exports, "__esModule", {
+	  value: true
+	});
+
+	var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+
+	var _unit = __webpack_require__(11);
+
+	var _unit2 = _interopRequireDefault(_unit);
+
+	var _renderedElement = __webpack_require__(9);
+
+	var _renderedElement2 = _interopRequireDefault(_renderedElement);
+
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+	function _possibleConstructorReturn(self, call) { if (!self) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return call && (typeof call === "object" || typeof call === "function") ? call : self; }
+
+	function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
+
+	var Line = function (_Unit) {
+	  _inherits(Line, _Unit);
+
+	  function Line(point1, point2, id, player) {
+	    _classCallCheck(this, Line);
+
+	    var _this = _possibleConstructorReturn(this, Object.getPrototypeOf(Line).call(this, "Line", id, player, point1, {
+	      "MaxHealth": 50,
+	      "Health": 50,
+	      "Tags": ["Destructible", "Hidden"]
+	    }));
+
+	    _this.Point1 = point1;
+	    _this.Point2 = point2;
+	    return _this;
+	  }
+
+	  _createClass(Line, [{
+	    key: 'render',
+	    value: function render() {
+	      var renderString = "<line x1=\"" + this.Point1.X + "\" y1=\"" + this.Point1.Y + "\" x2=\"" + this.Point2.X + "\" y2=\"" + this.Point2.Y + "\" stroke-width=\"1\" stroke=\"black\"/>";
+	      var element = new _renderedElement2.default(renderString, "Line");
+	      return [element];
+	    }
+	  }]);
+
+	  return Line;
+	}(_unit2.default);
+
+	exports.default = Line;
+
+/***/ },
+/* 16 */
+/***/ function(module, exports, __webpack_require__) {
 
 	"use strict";
 
@@ -2427,22 +2942,34 @@
 	  value: true
 	});
 
+	var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+
+	var _renderedElement = __webpack_require__(9);
+
+	var _renderedElement2 = _interopRequireDefault(_renderedElement);
+
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
 	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
-	var AttributeSet = function AttributeSet(health, attack, attackRate, viewRange, attackRange, speed, modifiers) {
-	  _classCallCheck(this, AttributeSet);
+	var SelectedOverlay = function () {
+	  function SelectedOverlay(position) {
+	    _classCallCheck(this, SelectedOverlay);
 
-	  this.MaxHealth = health;
-	  this.Health = health;
-	  this.Attack = attack;
-	  this.AttackRate = attackRate;
-	  this.ViewRange = viewRange;
-	  this.AttackRange = attackRange;
-	  this.MovementSpeed = speed;
-	  this.Modifiers = modifiers;
-	};
+	    this.Position = position;
+	  }
 
-	exports.default = AttributeSet;
+	  _createClass(SelectedOverlay, [{
+	    key: "render",
+	    value: function render() {
+	      return [new _renderedElement2.default("<rect x=\"" + (this.Position.X - 5).toString() + "\" y= \"" + (this.Position.Y - 5).toString() + "\" width = \"110\" height=\"110\" style=\"fill:gold\"/>", "SelectedOutline")];
+	    }
+	  }]);
+
+	  return SelectedOverlay;
+	}();
+
+	exports.default = SelectedOverlay;
 
 /***/ }
 /******/ ]);

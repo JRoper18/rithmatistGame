@@ -19,19 +19,21 @@ export default class Chalkling extends Unit{
     switch(this.CurrentAction){
       /*
       The reason for the frame+1 and parenthesis is because I can take a group of png files, selected them all, and then rename using f2/
-      If I put no name in, it names them (1), (2), etc. 
+      If I put no name in, it names them (1), (2), etc.
        */
       case "IDLE":
-        pathToAnimation = './chalklings/' + this.Name + '/Animations/Idle/(' + (this.Frame+1) + ").png";
+        pathToAnimation = './chalklings/' + this.Name + '/Animations/Idle.png';
         break;
       case "WALK":
-        pathToAnimation = './chalklings/' + this.Name + '/Animations/Walk/(' + (this.Frame+1) + ").png";
+        pathToAnimation = './chalklings/' + this.Name + '/Animations/Walk.png';
         break;
       case "ATTACK":
-        pathToAnimation = './chalklings/' + this.Name + '/Animations/Attack/(' + (this.Frame+1) + ").png";
+        pathToAnimation = './chalklings/' + this.Name + '/Animations/Attack.png';
+        break;
+      case "DYING":
+        pathToAnimation = './chalklings/' + this.Name + '/Animations/Dying.png';
         break;
       case "DEATH":
-        pathToAnimation = './chalklings/' + this.Name + '/Animations/Death/' + this.Frame + ".png";
         break;
       case "FINISHER":
         pathToAnimation = './chalklings/' + this.Name + '/Animations/Finishers/' + this.Target.Name + '/' + this.Frame + ".png";
@@ -55,7 +57,9 @@ export default class Chalkling extends Unit{
     this.Path = path;
   }
   die(){
-    this.CurrentAction = "DEATH";
+    this.CurrentAction = "DYING";
+    this.Frame = 0;
+    this.TimeSinceAnimationStarted = 0;
     console.log("A " + this.Player + " " + this.Name + " has died!");
   }
   getNearbyEnemies(){
@@ -76,12 +80,6 @@ export default class Chalkling extends Unit{
   update(time){
     //Update topleft
     this.TopLeft = new Point(this.Position.X - 50, this.Position.Y - 50)
-
-    if(this.Attributes.Health <= 0){ //Is it dead?
-      this.die();
-      return;
-    }
-
     //Calculate the current frame.
     let newTime = (this.TimeSinceAnimationStarted + time); //Get the new time since the animation started
     let numFrames = this.Attributes.AnimationData[this.CurrentAction].Frames;
@@ -89,19 +87,31 @@ export default class Chalkling extends Unit{
     let framesPerSecond = numFrames/animationTime;
     this.Frame = Math.min(Math.round(newTime * framesPerSecond), numFrames-1) //Don't round up if we're out of frames. The -1 is because we start at frame 0;
     this.TimeSinceAnimationStarted = newTime;
+
     if(newTime > animationTime){ //Is my animation done?
       if(this.CurrentAction == "ATTACK"){ //So I'm attacking someone and I just finished an attack animation. Should I continue?
         if(this.Target.Attributes.Health > 0){ //My enemy is alive! Time to finish the job.
-          this.CurrentAction = "ATTACK";
           this.Target.Attributes.Health -= this.Attributes.Attack;
         }
         else{
           this.CurrentAction = "IDLE";
         }
       }
+      else if(this.CurrentAction == "DYING"){
+          this.CurrentAction = "DEATH";
+      }
       this.Frame = 0;
       this.TimeSinceAnimationStarted = 0;
+
     }
+    if(this.CurrentAction == "DYING" || this.CurrentAction == "DEATH"){
+      return;
+    }
+    if(this.Attributes.Health <= 0 && this.CurrentAction != "DYING"){ //Is it dead?
+      this.die();
+      return;
+    }
+
     for(let i = 0; i<this.Attributes.Modifiers; i++){ //Can any of it's modifiers be applied?
       let currentModifier = this.Attributes.Modifiers[i];
       if(currentModifier.Condition(this) == true){
@@ -155,11 +165,20 @@ export default class Chalkling extends Unit{
     }
   }
   render(){
-    let chalklingImage = "<image xlink:href=\""  + this.getAnimation() + "\" x=\"" + (this.TopLeft.X).toString()+ "\" y=\"" + (this.TopLeft.Y).toString() + "\" height=\"100\" width=\"100\" />"
-    let healthBarOutside = '<rect x="' + (this.TopLeft.X).toString() + '" y="' + (this.TopLeft.Y+110).toString() + '" width="100" height="5" fill="green"/>';
-    let healthRatio = Math.max(0, (((this.Attributes.MaxHealth-this.Attributes.Health)/this.Attributes.MaxHealth)*100));
-    let healthBarLeft = '<rect x="' + ((this.TopLeft.X) + (100-healthRatio)).toString() + '" y="' + (this.TopLeft.Y+110).toString() + '" width="' + healthRatio.toString() +  '" height="5" fill="red"/>';
-    let healthBarTotal = healthBarOutside + healthBarLeft
+    //The way we render only a section of the spritesheet is to embed it in another svg and set the viewbox.
+    //Other methods here: http://stackoverflow.com/questions/16983442/how-to-specify-the-portion-of-the-image-to-be-rendered-inside-svgimage-tag
+    if(this.CurrentAction == "DEATH"){
+      return []
+    }
+    const totalWidth = this.Attributes.AnimationData[this.CurrentAction].Size.X
+    const frameWidth = (totalWidth/this.Attributes.AnimationData[this.CurrentAction].Frames)
+    const frameHeight = this.Attributes.AnimationData[this.CurrentAction].Size.Y
+    const viewBox = (frameWidth * this.Frame).toString() + " 0 " + frameWidth.toString() + " " + frameHeight.toString()
+    const chalklingImage = "<svg x=\"" + this.TopLeft.X + "\" y=\"" + this.TopLeft.Y + "\" width=\"100px\" height=\"100px\" viewBox=\"" + viewBox + "\">" + "<image x=\"0px\" y=\"0px\" width=\"" + totalWidth.toString() + "\" height=\"" + frameHeight + "\" xlink:href=\"" + this.getAnimation() + "\"" + "/></svg>"
+    const healthBarOutside = '<rect x="' + (this.TopLeft.X).toString() + '" y="' + (this.TopLeft.Y+110).toString() + '" width="100" height="5" fill="green"/>';
+    const healthRatio = Math.max(0, (((this.Attributes.MaxHealth-this.Attributes.Health)/this.Attributes.MaxHealth)*100));
+    const healthBarLeft = '<rect x="' + ((this.TopLeft.X) + (100-healthRatio)).toString() + '" y="' + (this.TopLeft.Y+110).toString() + '" width="' + healthRatio.toString() +  '" height="5" fill="red"/>';
+    const healthBarTotal = healthBarOutside + healthBarLeft
     return [new RenderedElement(chalklingImage, "ChalklingImage"), new RenderedElement(healthBarTotal, "ChalklingHealth")]
   }
 }

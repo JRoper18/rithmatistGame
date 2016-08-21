@@ -11,15 +11,34 @@ export class Testling extends Chalkling{
       "AnimationData": {
         "IDLE" : {
           "Frames" : 1,
-          "Time" : 1000
+          "Time" : 1000,
+          "Size" : {
+            "X": 259,
+            "Y": 194
+          }
         },
         "WALK" : {
-          "Frames" : 1,
-          "Time" : 1000
+          "Frames" : 6,
+          "Time" : 800,
+          "Size" : {
+            "X" : 1500,
+            "Y" : 250
+          }
         },
         "ATTACK": {
-          "Frames" : 21,
-          "Time" : 1000
+          "Frames" : 17,
+          "Time" : 2000,
+          "Size" : {
+            "X" : 10850,
+            "Y" : 374
+          }        },
+        "DYING": {
+          "Frames": 19,
+          "Time": 1000,
+          "Size" : {
+            "X" : 6650,
+            "Y" : 250
+          }
         }
       },
       "Tags" : [

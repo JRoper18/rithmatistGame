@@ -18,7 +18,6 @@ export default class GameState{
     this.Contains[0].moveTo(new Point(300, 300))
     this.Contains[1].moveTo(new Point(300, 600));
     this.IDGenerator = this.getId();
-    this.Contains.push(new Testling(42, "red", new Point(300, 100)))
   }
   *getId(){
       let index = 3;
@@ -122,6 +121,7 @@ export default class GameState{
     this.getBinded((rune) => {
       if(this.isChalkling(rune)){
         if(rune.CurrentAction == "DEATH"){
+          console.log("EEY");
           this.Contains.splice(this.Contains.indexOf(rune), 1); //If the chalkling is dead, removes is from board.
           this.Selected.splice(this.Contains.indexOf(rune), 1); //Also, make sure you unselect it.
         }
