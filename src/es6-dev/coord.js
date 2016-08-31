@@ -12,7 +12,7 @@ import Point from './point.js';
  *      UMBC
  *      Information Systems Department
  *      1000 Hilltop Circle
- *      Baltimore, MD 21250 
+ *      Baltimore, MD 21250
  *      lanthony@umbc.edu
  *
  *	Jacob O. Wobbrock, Ph.D.
@@ -64,24 +64,29 @@ function findIntersectionPoint(line1, line2) { //http://stackoverflow.com/a/5652
 	const q = line2[0];
 	const r = line1[1].subtract(line1[0]);
 	const s = line2[1].subtract(line2[0]);
-	const t = q.subtract(p).multiply(s).divide(r.multiply(s));
-	const u = q.subtract(p).multiply(r).divide(r.multiply(s));
-	if (r.multiply(s) !== 0 && ((0 <= t.X && t.X <= 1) && (0 <= t.Y && t.Y <= 1))) {
-		const newP = p.add(t.multiply(r));
+	const t = q.subtract(p).crossProduct(s) / (r.crossProduct(s));
+	const u = q.subtract(p).crossProduct(r) / (r.crossProduct(s));
+	if (r.crossProduct(s) === 0 && (q.subtract(p).crossProduct(r) === 0)) { //Collinear
+		return new Point(0, 0);
+	} else if (r.crossProduct(s) === 0 && (q.subtract(p).crossProduct(r) !== 0)) { //Parallel lines
+		return new Point(0, 0);
+	} else if (r.crossProduct(s) !== 0 && ((0 <= t && t <= 1) && (0 <= u && u <= 1))) {
+		const newP = p.add(r.scale(t));
 		return newP;
 	} else {
 		return new Point(0, 0);
 	}
 }
 
-function movePointAlongLine(pt1, pt2, distanceToMove) {
+function movePointAlongLine(pt1, pt2, distanceToMove, percent) {
 	let dx = pt2.X - pt1.X;
 	let dy = pt2.Y - pt1.Y;
 	let distance = Distance(pt1, pt2);
 	let unitX = dx / distance;
 	let unitY = dy / distance;
-	let newX = (unitX * distanceToMove) + pt1.X;
-	let newY = (unitY * distanceToMove) + pt1.Y;
+	let unitDistance = (percent) ? distanceToMove * distance : distanceToMove;
+	let newX = (unitX * unitDistance) + pt1.X;
+	let newY = (unitY * unitDistance) + pt1.Y;
 	return new Point(newX, newY);
 
 }
