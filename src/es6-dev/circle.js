@@ -37,32 +37,26 @@ export default class Circle extends Unit {
 		this.HasBinded = [];
 	}
 	toSimplePolygon() { //When someone draws lines they can be complex (self-intersecting) which makes it impossible to detect collisions.
-		console.log(this.Points.length);
 		let newPoints = [this.Points[0], this.Points[1], this.Points[2]];
 		let poly = new SAT.Polygon(new SAT.Vector(), []);
-		let lastIntersectPoint = null;
+		let inComplexArea = false;
 		for (let i = 3; i < this.Points.length; i++) {
+			if (!inComplexArea) { //We're not currently checking points on the outside that will be removed.
+				newPoints.push(this.Points[i]);
+			}
 			const currentLine = [this.Points[i], this.Points[i - 1]];
 			for (let j = 1; j < newPoints.length; j++) {
 				const checkedLine = [newPoints[j], newPoints[j - 1]];
 				const possibleIntersectPoint = coord.findIntersectionPoint(currentLine, checkedLine);
-				console.log(possibleIntersectPoint);
 				if (!possibleIntersectPoint.isZero()) { //It intersects with a line already checked.
 					console.log("INTER");
-					if (lastIntersectPoint === null) { //If it's null, that means we are starting a self-intersection that will be cut off.
-						lastIntersectPoint = possibleIntersectPoint;
-					} else { //Turns out we're on an outside portion, but we just intersected again and now we're back to normal.
-						lastIntersectPoint = null;
-					}
+					debugger;
+					inComplexArea = !inComplexArea;
 				} else { //No intersection
 
 				}
 			}
-			if (lastIntersectPoint === null) { //We're not currently checking points on the outside that will be removed.
-				newPoints.push(this.Points[i]);
-			}
 		}
-		console.log(this.Points.length);
 		this.Points = newPoints;
 	}
 	toSATPolygon() {

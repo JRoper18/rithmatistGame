@@ -17,7 +17,6 @@ export default class GameState {
     ], 2, "red")];
 			this.Selected = [];
 			this.Contains[0].moveTo(new Point(300, 300));
-			this.Contains[1].moveTo(new Point(300, 600));
 			this.IDGenerator = this.getId();
 		} *
 		getId() {

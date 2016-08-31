@@ -66,7 +66,9 @@ function findIntersectionPoint(line1, line2) { //http://stackoverflow.com/a/5652
 	const s = line2[1].subtract(line2[0]);
 	const t = q.subtract(p).crossProduct(s) / (r.crossProduct(s));
 	const u = q.subtract(p).crossProduct(r) / (r.crossProduct(s));
-	if (r.crossProduct(s) === 0 && (q.subtract(p).crossProduct(r) === 0)) { //Collinear
+	if (line1[0] === line2[0] || line1[1] === line2[0] || line1[0] === line2[1] || line1[1] === line2[1]) { //They're touching each other on the edge
+		return new Point(0, 0);
+	} else if (r.crossProduct(s) === 0 && (q.subtract(p).crossProduct(r) === 0)) { //Collinear
 		return new Point(0, 0);
 	} else if (r.crossProduct(s) === 0 && (q.subtract(p).crossProduct(r) !== 0)) { //Parallel lines
 		return new Point(0, 0);
