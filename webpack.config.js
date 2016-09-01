@@ -44,7 +44,7 @@ module.exports = {
 				loader: 'babel-loader',
 				test: /\.js$/,
 				include: [
-                  path.resolve(__dirname, "src"),
+                  path.resolve(__dirname, "src")
                 ],
 				presets: ['es2015']
             },

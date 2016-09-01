@@ -145,16 +145,15 @@ export default class GameState {
 		}
 	}
 	doCircleChalklingCollision(circle, chalkling) {
-		let response = new SAT.Response();
-		if (SAT.testPolygonPolygon(new SAT.Box(new SAT.Vector(chalkling.TopLeft.X, chalkling.TopLeft.Y), 100, 100).toPolygon(), circle.toSATPolygon(), response)) {
-			if (response.overlapV.x === 0 && response.overlapV.y === 0) { //We're on the border, colliding but not moving
-				chalkling.Position.X -= 1;
-				chalkling.Position.Y -= 1;
-			} else {
-				chalkling.Position.X -= (response.overlapV.x / 2);
-				chalkling.Position.Y -= (response.overlapV.y / 2);
+		let validPolygons = circle.CollisionPolygons;
+		for (let i = 0; i < validPolygons.length; i++) {
+			let response = new SAT.Response();
+			let currentlyTestedPolygon = validPolygons[i];
+			if (SAT.testPolygonPolygon(new SAT.Box(new SAT.Vector(chalkling.TopLeft.X, chalkling.TopLeft.Y), 100, 100).toPolygon(), currentlyTestedPolygon, response)) {
+				chalkling.Position.X -= (response.overlapV.x);
+				chalkling.Position.Y -= (response.overlapV.y);
+				chalkling.override();
 			}
-			chalkling.override();
 		}
 	}
 	updateHitboxes() {

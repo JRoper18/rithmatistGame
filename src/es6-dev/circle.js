@@ -4,7 +4,6 @@ import * as coord from './coord.js';
 import Point from './point.js';
 import RenderedElement from './renderedElement.js';
 import Rune from './rune.js';
-
 export default class Circle extends Unit {
 	constructor(points, id, player) {
 		points.push(points[0]);
@@ -18,7 +17,11 @@ export default class Circle extends Unit {
 			distances += coord.Distance(position, points[i]);
 		}
 		let radius = distances / points.length;
-		points = coord.Resample(points, Math.round(radius));
+		if (points.length > Math.round(radius)) {
+
+		} else {
+			points = coord.Resample(points, Math.round(radius));
+		}
 		const MAX = Math.round(radius) * 10; //Health is related to the number of points (10 health per point) which is the Radius. E.g bigger circle = more points = more health
 		let health = MAX;
 		for (let i = 0; i < points.length; i++) { //Deduct health for each point that's off center.
@@ -35,26 +38,27 @@ export default class Circle extends Unit {
 		this.Radius = radius;
 		this.toSimplePolygon();
 		this.HasBinded = [];
+		this.CollisionPolygons = this.toSATPolygon();
+		console.log(this.CollisionPolygons)
 	}
 	toSimplePolygon() { //When someone draws lines they can be complex (self-intersecting) which makes it impossible to detect collisions.
 		let newPoints = [this.Points[0], this.Points[1], this.Points[2]];
 		let poly = new SAT.Polygon(new SAT.Vector(), []);
 		let inComplexArea = false;
 		for (let i = 3; i < this.Points.length; i++) {
-			if (!inComplexArea) { //We're not currently checking points on the outside that will be removed.
-				newPoints.push(this.Points[i]);
-			}
 			const currentLine = [this.Points[i], this.Points[i - 1]];
 			for (let j = 1; j < newPoints.length; j++) {
 				const checkedLine = [newPoints[j], newPoints[j - 1]];
 				const possibleIntersectPoint = coord.findIntersectionPoint(currentLine, checkedLine);
-				if (!possibleIntersectPoint.isZero()) { //It intersects with a line already checked.
+				if (!possibleIntersectPoint.isZero() && i != this.Points.length) { //It intersects with a line already checked that's not the closing line.
 					console.log("INTER");
-					debugger;
 					inComplexArea = !inComplexArea;
 				} else { //No intersection
 
 				}
+			}
+			if (!inComplexArea) { //We're not currently checking points on the outside that will be removed.
+				newPoints.push(this.Points[i]);
 			}
 		}
 		this.Points = newPoints;
@@ -67,8 +71,8 @@ export default class Circle extends Unit {
 			pointArray.push(new V(this.Points[i].X, this.Points[i].Y));
 		}
 		let polygon = new P(new V(), pointArray);
-		return polygon;
-
+		let validPolygons = polygon.getDecompPolygons();
+		return validPolygons;
 	}
 	averageDistanceFromCenter() {
 		let distances = 0;
