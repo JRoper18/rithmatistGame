@@ -38,30 +38,39 @@ export default class Circle extends Unit {
 		this.Radius = radius;
 		this.toSimplePolygon();
 		this.HasBinded = [];
-		this.CollisionPolygons = this.toSATPolygon();
-		console.log(this.CollisionPolygons)
+		this.decompPolygons(this.toSATPolygon());
 	}
 	toSimplePolygon() { //When someone draws lines they can be complex (self-intersecting) which makes it impossible to detect collisions.
-		let newPoints = [this.Points[0], this.Points[1], this.Points[2]];
-		let poly = new SAT.Polygon(new SAT.Vector(), []);
-		let inComplexArea = false;
-		for (let i = 3; i < this.Points.length; i++) {
-			const currentLine = [this.Points[i], this.Points[i - 1]];
-			for (let j = 1; j < newPoints.length; j++) {
-				const checkedLine = [newPoints[j], newPoints[j - 1]];
-				const possibleIntersectPoint = coord.findIntersectionPoint(currentLine, checkedLine);
-				if (!possibleIntersectPoint.isZero() && i != this.Points.length) { //It intersects with a line already checked that's not the closing line.
-					console.log("INTER");
-					inComplexArea = !inComplexArea;
-				} else { //No intersection
-
-				}
-			}
-			if (!inComplexArea) { //We're not currently checking points on the outside that will be removed.
-				newPoints.push(this.Points[i]);
+		let longestDistance = 0;
+		for (let i = 0; i < this.Points.length; i++) { //Find the longest distance away from center.
+			let currentDistance = coord.Distance(this.Position, this.Points[i]);
+			if (currentDistance > longestDistance) {
+				longestDistance = currentDistance;
 			}
 		}
-		this.Points = newPoints;
+		for (let i = 0; i < this.Points.length; i++) { //
+			/*
+			How this works is that we draw an imaginary line between the center and the point. If we find an intersection from the imaginary line to one of the line segments of the circle,
+			 */
+			//Make an imaginary line from from the center to this point.
+			var endPoint = coord.movePointAlongLine(this.Position, this.Points[i], longestDistance);
+			var throughLine = [this.Position, endPoint];
+			for (let j = 1; j < this.Points.length; j++) {
+				let currentLine = [this.Points[j - 1], this.Points[j]];
+				let farthestPoint = coord.Distance(this.Points[i], this.Position);
+				let possibleIntersectPoint = coord.findIntersectionPoint(currentLine, throughLine);
+				if (!possibleIntersectPoint.isZero()) { //Found intersection
+					if (coord.Distance(possibleIntersectPoint, this.Position) > farthestPoint) {
+						//Remove the farthestPoint
+						this.Points.splice(this.Points.indexOf(farthestPoint), 1);
+						farthestPoint = possibleIntersectPoint;
+					}
+				}
+			}
+
+		}
+		//Don't forget to reclose the circle
+		this.Points.push(this.Points[0]);
 	}
 	toSATPolygon() {
 		let P = SAT.Polygon; //Shortening for easier typing
@@ -71,8 +80,12 @@ export default class Circle extends Unit {
 			pointArray.push(new V(this.Points[i].X, this.Points[i].Y));
 		}
 		let polygon = new P(new V(), pointArray);
+		return polygon;
+	}
+	decompPolygons(polygon) {
+		console.log(decomp.isSimple(polygon))
 		let validPolygons = polygon.getDecompPolygons();
-		return validPolygons;
+		this.CollisionPolygons = validPolygons;
 	}
 	averageDistanceFromCenter() {
 		let distances = 0;
