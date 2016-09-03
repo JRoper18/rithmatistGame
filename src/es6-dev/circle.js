@@ -17,7 +17,7 @@ export default class Circle extends Unit {
 			distances += coord.distance(position, points[i]);
 		}
 		let radius = distances / points.length;
-		if (points.length > Math.round(radius)) {
+		if (points.length < Math.round(radius)) {
 
 		} else {
 			points = coord.resample(points, Math.round(radius));
@@ -36,40 +36,42 @@ export default class Circle extends Unit {
 		super("Circle", id, player, position, attr);
 		this.points = points;
 		this.radius = radius;
-		this.toSimplePolygon();
 		this.hasBinded = [];
-		this.decompPolygons(this.toSATPolygon());
+		this.getConvexHull();
+		this.toSATPolygon();
 	}
-	toSimplePolygon() { //When someone draws lines they can be complex (self-intersecting) which makes it impossible to detect collisions.
-		let longestDistance = 0;
-		for (let i = 0; i < this.points.length; i++) { //Find the longest distance away from center.
-			let currentDistance = coord.distance(this.position, this.points[i]);
-			if (currentDistance > longestDistance) {
-				longestDistance = currentDistance;
+	getConvexHull() { //When someone draws lines they can be complex (self-intersecting) which makes it impossible to detect collisions.
+		//We need to make a hull of the polygon which is convex: http://www.cs.jhu.edu/~misha/Fall05/09.13.05.pdf
+		let firstPoint = new Point(Infinity, Infinity);
+		for (let i = 0; i < this.points.length; i++) { //Get the leftmost point to start
+			if (this.points[i].x < firstPoint.x) {
+				firstPoint = this.points[i];
 			}
 		}
-		for (let i = 0; i < this.points.length; i++) { //
-			/*
-			How this works is that we draw an imaginary line between the center and the point. If we find an intersection from the imaginary line to one of the line segments of the circle, we then check if there's another point that's farther out from the center. If there is, that farther out point is taken as the new point, and the one on the inside is removed. This way the polygon takes all the points and just makes the biggest, non-complex polygon it can with them.
-			 */
-			//Make an imaginary line from from the center to this point.
-			var endPoint = coord.movePointAlongLine(this.position, this.points[i], longestDistance);
-			var throughLine = [this.position, endPoint];
-			for (let j = 1; j < this.points.length; j++) {
-				let currentLine = [this.points[j - 1], this.points[j]];
-				let farthestPoint = coord.distance(this.points[i], this.position);
-				let possibleIntersectPoint = coord.findIntersectionPoint(currentLine, throughLine);
-				if (!possibleIntersectPoint.isZero()) { //Found intersection
-					if (coord.distance(possibleIntersectPoint, this.position) > farthestPoint) {
-						//Remove the farthestPoint
-						this.points.splice(this.points.indexOf(farthestPoint), 1);
-						farthestPoint = possibleIntersectPoint;
-					}
+		let currentPoint = firstPoint;
+		let hull = [];
+		do {
+			hull.push(currentPoint);
+			//Using the gift-wrapping algorithm
+			let nextPoint;
+			if (currentPoint == this.points[0]) {
+				nextPoint = this.points[1];
+			} else {
+				nextPoint = this.points[0];
+			}
+			for (let i = 0; i < this.points.length; i++) {
+				const orient = ((nextPoint.x - currentPoint.x) * (this.points[i].y - currentPoint.y) - (nextPoint.y - currentPoint.y) * (this.points[i].x - currentPoint.x));
+				if (orient > 0) { //We found a most that is to the left (more outer) than our nextPoint
+					nextPoint = this.points[i];
 				}
 			}
-		}
-		//Don't forget to reclose the circle
-		this.points.push(this.points[0]);
+			currentPoint = nextPoint;
+			if (currentPoint === undefined) {
+				break;
+			}
+		} while (currentPoint != firstPoint);
+		hull.push(firstPoint); //Finish the loop
+		this.points = hull;
 	}
 	toSATPolygon() {
 		let P = SAT.Polygon; //Shortening for easier typing
@@ -80,7 +82,7 @@ export default class Circle extends Unit {
 		}
 		let polygon = new P(new V(), pointArray);
 		//Now check to see if we are clockwise or counter-clockwise : http://stackoverflow.com/questions/1165647/how-to-determine-if-a-list-of-polygon-points-are-in-clockwise-order
-		return polygon;
+		this.collisionPolygons = [polygon];
 	}
 	decompPolygons(polygon) {
 		let validPolygons = polygon.getDecompPolygons();
@@ -98,7 +100,7 @@ export default class Circle extends Unit {
 		this.points = coord.translateTo(this.points, point);
 		this.position = point;
 	}
-	getBinded(object = "Circle") { //depth-first search to find all objects of type object
+	getBinded(onextPointject = "Circle") { //depth-first search to find all objects of type object
 		let binded = [];
 		this.getBindedIncursion(this, object, binded);
 		return binded;

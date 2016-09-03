@@ -20,7 +20,6 @@ function gameLoop(timeStamp) {
 	update(changeInTime);
 	render();
 	requestAnimationFrame(gameLoop);
-
 }
 
 function update(time) {

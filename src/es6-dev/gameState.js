@@ -149,16 +149,13 @@ export default class GameState {
 		for (let i = 0; i < validPolygons.length; i++) {
 			let response = new SAT.Response();
 			let currentlyTestedPolygon = validPolygons[i];
-			const BOUNCE = -10;
+			const BOUNCE = 10;
 			let chalklingBox = new SAT.Box(new SAT.Vector(chalkling.topLeft.x, chalkling.topLeft.y), 100, 100).toPolygon();
 			if (SAT.testPolygonPolygon(chalklingBox, currentlyTestedPolygon, response)) {
 				console.log("Collision");
-				if ((response.overlapV.x === 0 || response.overlapV.x === -0) && (response.overlapV.y === 0 || response.overlapV.y === -0)) {
-					coord.movePointAlongLine(chalkling.position, circle.position, BOUNCE);
-				} else {
-					chalkling.position.x -= (response.overlapV.x);
-					chalkling.position.y -= (response.overlapV.y);
-				}
+				chalkling.position.x -= (response.overlapV.x);
+				chalkling.position.y -= (response.overlapV.y);
+				chalkling.position = coord.movePointAlongLine(chalkling.position, circle.position, -1 * BOUNCE); //Fallback if we ever get a collision of 0 (we usually do, our library is faulty)
 				chalkling.override();
 			}
 			response.clear();
