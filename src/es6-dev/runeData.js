@@ -20,17 +20,17 @@ export const allRunes = new Array(
 export function getUserRunes(recognizer, runes) { //Runes is array of the names of the runes that the user has.
 	allRunes.forEach(function(item, index) {
 		for (let i = 0; i < runes.length; i++) {
-			if (runes[i] == item.Name) {
-				recognizer.AddGesture(item.Name, item.Points);
+			if (runes[i] == item.name) {
+				recognizer.addGesture(item.name, item.points);
 			}
 		}
 	});
 }
 export function getRunePoints(gestureName, allRunes) {
 	for (let i = 0; i < allRunes.length; i++) {
-		if (gestureName == allRunes[i].Name) {
+		if (gestureName == allRunes[i].name) {
 			isARune = true;
-			return allRunes[i].Points;
+			return allRunes[i].points;
 		}
 	}
 }

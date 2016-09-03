@@ -6,126 +6,126 @@ import Unit from './unit.js';
 export default class Chalkling extends Unit {
 	constructor(name, id, player, position, attributeSet) {
 		super(name, id, player, position, attributeSet);
-		this.CurrentAction = "IDLE";
-		this.Frame = 0;
-		this.Sees = [];
-		this.TimeSinceAnimationStarted = 0;
-		this.Target = null;
-		this.Path = [];
-		this.TopLeft = new Point(this.Position.X - 50, this.Position.Y - 50);
+		this.currentAction = "IDLE";
+		this.frame = 0;
+		this.sees = [];
+		this.timeSinceAnimationStarted = 0;
+		this.target = null;
+		this.path = [];
+		this.topLeft = new Point(this.position.x - 50, this.position.y - 50);
 	}
 	getAnimation() { //Example path: ./chalklings/Testling/Animations/Idle/X
 		let pathToAnimation = '';
-		switch (this.CurrentAction) {
+		switch (this.currentAction) {
 			/*
 			The reason for the frame+1 and parenthesis is because I can take a group of png files, selected them all, and then rename using f2/
 			If I put no name in, it names them (1), (2), etc.
 			 */
 			case "IDLE":
-				pathToAnimation = './chalklings/' + this.Name + '/Animations/Idle.png';
+				pathToAnimation = './chalklings/' + this.name + '/Animations/Idle.png';
 				break;
 			case "WALK":
-				pathToAnimation = './chalklings/' + this.Name + '/Animations/Walk.png';
+				pathToAnimation = './chalklings/' + this.name + '/Animations/Walk.png';
 				break;
 			case "ATTACK":
-				pathToAnimation = './chalklings/' + this.Name + '/Animations/Attack.png';
+				pathToAnimation = './chalklings/' + this.name + '/Animations/Attack.png';
 				break;
 			case "DYING":
-				pathToAnimation = './chalklings/' + this.Name + '/Animations/Dying.png';
+				pathToAnimation = './chalklings/' + this.name + '/Animations/Dying.png';
 				break;
 			case "DEATH":
 				break;
 			case "FINISHER":
-				pathToAnimation = './chalklings/' + this.Name + '/Animations/Finishers/' + this.Target.Name + '/' + this.Frame + ".png";
+				pathToAnimation = './chalklings/' + this.name + '/Animations/Finishers/' + this.target.name + '/' + this.frame + ".png";
 				break;
 			case "CRITICAL":
-				pathToAnimation = './chalklings/' + this.Name + '/Animations/Critical/' + this.Frame + ".png";
+				pathToAnimation = './chalklings/' + this.name + '/Animations/Critical/' + this.frame + ".png";
 				break;
 			default:
-				pathToAnimation = './chalklings/' + this.Name + '/Animations/Idle/' + this.Frame + ".png";
+				pathToAnimation = './chalklings/' + this.name + '/Animations/Idle/' + this.frame + ".png";
 		}
 		return pathToAnimation;
 	}
 	moveTo(position) {
-		this.Target = null;
-		this.CurrentAction = "WALK";
-		this.Path = [position];
+		this.target = null;
+		this.currentAction = "WALK";
+		this.path = [position];
 	}
 	moveAlongPath(path) { //Path is array of points
-		this.Target = null;
-		this.CurrentAction = "WALK";
-		this.Path = path;
+		this.target = null;
+		this.currentAction = "WALK";
+		this.path = path;
 	}
 	die() {
-		this.CurrentAction = "DYING";
-		this.Frame = 0;
-		this.TimeSinceAnimationStarted = 0;
-		console.log("A " + this.Player + " " + this.Name + " has died!");
+		this.currentAction = "DYING";
+		this.frame = 0;
+		this.timeSinceAnimationStarted = 0;
+		console.log("A " + this.player + " " + this.name + " has died!");
 	}
 	getNearbyEnemies() {
 		let enemies = [];
-		for (let i = 0; i < this.Sees.length; i++) {
-			if (this.Sees[i].Player != this.Player) {
-				enemies.push(this.Sees[i]);
+		for (let i = 0; i < this.sees.length; i++) {
+			if (this.sees[i].player != this.player) {
+				enemies.push(this.sees[i]);
 			}
 		}
 		return enemies;
 	}
 	override() {
-		this.CurrentAction = "IDLE";
-		this.Path = [];
-		this.Frame = 0;
-		this.Target = null;
+		this.currentAction = "IDLE";
+		this.path = [];
+		this.frame = 0;
+		this.target = null;
 	}
 	update(time) {
 		//Update topleft
-		this.TopLeft = new Point(this.Position.X - 50, this.Position.Y - 50);
+		this.topLeft = new Point(this.position.x - 50, this.position.y - 50);
 		//Calculate the current frame.
-		let newTime = (this.TimeSinceAnimationStarted + time); //Get the new time since the animation started
-		let numFrames = this.Attributes.AnimationData[this.CurrentAction].Frames;
-		let animationTime = this.Attributes.AnimationData[this.CurrentAction].Time;
+		let newTime = (this.timeSinceAnimationStarted + time); //Get the new time since the animation started
+		let numFrames = this.attributes.animationData[this.currentAction].frames;
+		let animationTime = this.attributes.animationData[this.currentAction].time;
 		let framesPerSecond = numFrames / animationTime;
-		this.Frame = Math.min(Math.round(newTime * framesPerSecond), numFrames - 1); //Don't round up if we're out of frames. The -1 is because we start at frame 0;
-		this.TimeSinceAnimationStarted = newTime;
+		this.frame = Math.min(Math.round(newTime * framesPerSecond), numFrames - 1); //Don't round up if we're out of frames. The -1 is because we start at frame 0;
+		this.timeSinceAnimationStarted = newTime;
 
 		if (newTime > animationTime) { //Is my animation done?
-			if (this.CurrentAction == "ATTACK") { //So I'm attacking someone and I just finished an attack animation. Should I continue?
-				if (this.Target.Attributes.Health > 0) { //My enemy is alive! Time to finish the job.
-					this.Target.Attributes.Health -= this.Attributes.Attack;
+			if (this.currentAction == "ATTACK") { //So I'm attacking someone and I just finished an attack animation. Should I continue?
+				if (this.target.attributes.health > 0) { //My enemy is alive! Time to finish the job.
+					this.target.attributes.health -= this.attributes.attack;
 				} else {
-					this.CurrentAction = "IDLE";
+					this.currentAction = "IDLE";
 				}
-			} else if (this.CurrentAction == "DYING") {
-				this.CurrentAction = "DEATH";
+			} else if (this.currentAction == "DYING") {
+				this.currentAction = "DEATH";
 			}
-			this.Frame = 0;
-			this.TimeSinceAnimationStarted = 0;
+			this.frame = 0;
+			this.timeSinceAnimationStarted = 0;
 
 		}
-		if (this.CurrentAction == "DYING" || this.CurrentAction == "DEATH") {
+		if (this.currentAction == "DYING" || this.currentAction == "DEATH") {
 			return;
 		}
-		if (this.Attributes.Health <= 0 && this.CurrentAction != "DYING") { //Is it dead?
+		if (this.attributes.health <= 0 && this.currentAction != "DYING") { //Is it dead?
 			this.die();
 			return;
 		}
 
-		for (let i = 0; i < this.Attributes.Modifiers; i++) { //Can any of it's modifiers be applied?
-			let currentModifier = this.Attributes.Modifiers[i];
-			if (currentModifier.Condition(this) === true) {
-				currentModifier.AttributeChange(this);
+		for (let i = 0; i < this.attributes.modifiers; i++) { //Can any of it's modifiers be applied?
+			let currentModifier = this.attributes.modifiers[i];
+			if (currentModifier.condition(this) === true) {
+				currentModifier.attributeChange(this);
 			}
 		}
-		if (this.Path.length !== 0) { //Am I currently going somewhere?
-			let distanceToMove = (time / 1000) * this.Attributes.MovementSpeed;
-			this.Position = coord.movePointAlongLine(this.Position, this.Path[0], distanceToMove);
-			if (coord.Distance(this.Position, this.Path[0]) < distanceToMove) { //Did I make it where I need to go?
-				this.Path.shift();
+		if (this.path.length !== 0) { //Am I currently going somewhere?
+			let distanceToMove = (time / 1000) * this.attributes.movementSpeed;
+			this.position = coord.movePointAlongLine(this.position, this.path[0], distanceToMove);
+			if (coord.distance(this.position, this.path[0]) < distanceToMove) { //Did I make it where I need to go?
+				this.path.shift();
 			}
 		} else { //Finished my path, go into idle.
-			this.CurrentAction = "IDLE";
+			this.currentAction = "IDLE";
 		}
-		if ((this.Target === null && this.getNearbyEnemies().length !== 0) && this.CurrentAction == "IDLE") { //Is there a nearby enemy I can attack?
+		if ((this.target === null && this.getNearbyEnemies().length !== 0) && this.currentAction == "IDLE") { //Is there a nearby enemy I can attack?
 			let nearbyEnemies = this.getNearbyEnemies();
 			let closestEnemy = null;
 			let closestEnemyDistance = Infinity;
@@ -133,45 +133,45 @@ export default class Chalkling extends Unit {
 				if (nearbyEnemies[i].hasTag("Hidden")) { //Don't bother looking at nearby people if they're hidden.
 					continue;
 				}
-				let currentDistance = coord.Distance(this.Position, nearbyEnemies[i].Position);
+				let currentDistance = coord.distance(this.position, nearbyEnemies[i].position);
 				if (currentDistance < closestEnemyDistance) {
 					closestEnemy = nearbyEnemies[i];
 					closestEnemyDistance = currentDistance;
 				}
 			}
-			this.Target = closestEnemy;
+			this.target = closestEnemy;
 		}
-		if (this.Target !== null) { //If there's a target:
-			if (this.Target.CurrentAction == "DEATH" || this.Target.Attributes.Health <= 0) { //Whoops, he's dead. Lets not bother him any more.
-				this.Target = null;
-			} else if (coord.Distance(this.Target.Position, this.Position) >= this.Attributes.ViewRange) { //Can i still see the target?
-				this.Target = null;
-				this.CurrentAction = "IDLE";
-			} else if (coord.Distance(this.Target.Position, this.Position) <= this.Attributes.AttackRange) { //Should I move to follow my target?
-				if (this.CurrentAction != "ATTACK") { //If we aren't already attacking...
-					this.Path = [];
-					this.CurrentAction = "ATTACK";
+		if (this.target !== null) { //If there's a target:
+			if (this.target.currentAction == "DEATH" || this.target.attributes.health <= 0) { //Whoops, he's dead. Lets not bother him any more.
+				this.target = null;
+			} else if (coord.distance(this.target.position, this.position) >= this.attributes.viewRange) { //Can i still see the target?
+				this.target = null;
+				this.currentAction = "IDLE";
+			} else if (coord.distance(this.target.position, this.position) <= this.attributes.attackRange) { //Should I move to follow my target?
+				if (this.currentAction != "ATTACK") { //If we aren't already attacking...
+					this.path = [];
+					this.currentAction = "ATTACK";
 				}
 			} else { //Follow him!
-				this.CurrentAction = "WALK";
-				this.moveTo(this.Target.Position);
+				this.currentAction = "WALK";
+				this.moveTo(this.target.position);
 			}
 		}
 	}
 	render() {
 		//The way we render only a section of the spritesheet is to embed it in another svg and set the viewbox.
 		//Other methods here: http://stackoverflow.com/questions/16983442/how-to-specify-the-portion-of-the-image-to-be-rendered-inside-svgimage-tag
-		if (this.CurrentAction == "DEATH") {
+		if (this.currentAction == "DEATH") {
 			return [];
 		}
-		const totalWidth = this.Attributes.AnimationData[this.CurrentAction].Size.X;
-		const frameWidth = (totalWidth / this.Attributes.AnimationData[this.CurrentAction].Frames);
-		const frameHeight = this.Attributes.AnimationData[this.CurrentAction].Size.Y;
-		const viewBox = (frameWidth * this.Frame).toString() + " 0 " + frameWidth.toString() + " " + frameHeight.toString();
-		const chalklingImage = "<svg x=\"" + this.TopLeft.X + "\" y=\"" + this.TopLeft.Y + "\" width=\"100px\" height=\"100px\" viewBox=\"" + viewBox + "\">" + "<image x=\"0px\" y=\"0px\" width=\"" + totalWidth.toString() + "\" height=\"" + frameHeight + "\" xlink:href=\"" + this.getAnimation() + "\"" + "/></svg>";
-		const healthBarOutside = '<rect x="' + (this.TopLeft.X).toString() + '" y="' + (this.TopLeft.Y + 110).toString() + '" width="100" height="5" fill="green"/>';
-		const healthRatio = Math.max(0, (((this.Attributes.MaxHealth - this.Attributes.Health) / this.Attributes.MaxHealth) * 100));
-		const healthBarLeft = '<rect x="' + ((this.TopLeft.X) + (100 - healthRatio)).toString() + '" y="' + (this.TopLeft.Y + 110).toString() + '" width="' + healthRatio.toString() + '" height="5" fill="red"/>';
+		const totalWidth = this.attributes.animationData[this.currentAction].size.x;
+		const frameWidth = (totalWidth / this.attributes.animationData[this.currentAction].frames);
+		const frameHeight = this.attributes.animationData[this.currentAction].size.y;
+		const viewBox = (frameWidth * this.frame).toString() + " 0 " + frameWidth.toString() + " " + frameHeight.toString();
+		const chalklingImage = "<svg x=\"" + this.topLeft.x + "\" y=\"" + this.topLeft.y + "\" width=\"100px\" height=\"100px\" viewBox=\"" + viewBox + "\">" + "<image x=\"0px\" y=\"0px\" width=\"" + totalWidth.toString() + "\" height=\"" + frameHeight + "\" xlink:href=\"" + this.getAnimation() + "\"" + "/></svg>";
+		const healthBarOutside = '<rect x="' + (this.topLeft.x).toString() + '" y="' + (this.topLeft.y + 110).toString() + '" width="100" height="5" fill="green"/>';
+		const healthRatio = Math.max(0, (((this.attributes.maxHealth - this.attributes.health) / this.attributes.maxHealth) * 100));
+		const healthBarLeft = '<rect x="' + ((this.topLeft.x) + (100 - healthRatio)).toString() + '" y="' + (this.topLeft.y + 110).toString() + '" width="' + healthRatio.toString() + '" height="5" fill="red"/>';
 		const healthBarTotal = healthBarOutside + healthBarLeft;
 		return [new RenderedElement(chalklingImage, "ChalklingImage"), new RenderedElement(healthBarTotal, "ChalklingHealth")];
 	}

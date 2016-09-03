@@ -10,44 +10,44 @@ import * as coord from './coord.js';
 
 export default class Canvas {
 	constructor(board, runes) {
-		this.GameState = board;
-		this.Runes = runes;
-		this.Mode = "COMMAND";
-		this.CurrentRune = new Rune([]);
-		this.StrokeId = 0;
-		this.Recognizer = new PDollarRecognizer();
+		this.gameState = board;
+		this.runes = runes;
+		this.mode = "COMMAND";
+		this.currentRune = new Rune([]);
+		this.strokeId = 0;
+		this.recognizer = new PDollarRecognizer();
 		this.enable();
 
 	}
 	changeMode(mode) {
-		this.CurrentRune = new Rune([]);
-		this.Mode = mode;
+		this.currentRune = new Rune([]);
+		this.mode = mode;
 	}
 	enable() {
-		getUserRunes(this.Recognizer, this.Runes);
-		let DOM = '#' + this.GameState.Element;
+		getUserRunes(this.recognizer, this.runes);
+		let DOM = '#' + this.gameState.element;
 		$(document).on("keydown", (key) => {
 			if (key.which == 90) { //If "z" key held down
 				//Clear Points
-				this.CurrentRune.Points = [];
+				this.currentRune.points = [];
 			} else if (key.which == 49) { //"1" key
 				//Set to draw mode
 				this.changeMode("DRAW");
 			} else if (key.which == 50) { //"2" key
 				this.changeMode("COMMAND");
-			} else if (key.which == 16 && this.Mode == "DRAW") {
+			} else if (key.which == 16 && this.mode == "DRAW") {
 				this.changeMode("STRAIGHTLINE");
 			}
 		});
 		$(document).on("keyup", (key) => {
-			if (key.which == 16 && this.Mode == "STRAIGHTLINE") { //Shift
+			if (key.which == 16 && this.mode == "STRAIGHTLINE") { //Shift
 				this.changeMode("DRAW");
 			}
 		});
 		$(DOM).on("mousedown", (mouseDownEvent) => {
-			if (mouseDownEvent.button == 2 && this.Mode != "SELECTION") { //Right click
+			if (mouseDownEvent.button == 2 && this.mode != "SELECTION") { //Right click
 				this.changeMode("SELECTION");
-			} else if (mouseDownEvent.button === 0 && this.Mode == "SELECTION") { //Left click
+			} else if (mouseDownEvent.button === 0 && this.mode == "SELECTION") { //Left click
 				this.changeMode("COMMAND");
 			}
 			this.doAction(mouseDownEvent, "mousedown");
@@ -61,75 +61,74 @@ export default class Canvas {
 		});
 	}
 	doAction(passedEvent, type) {
-		if (this.Mode == "DRAW") {
+		if (this.mode == "DRAW") {
 			if (type == "mousemove") {
 				let mousePosition = this.getMousePosition(passedEvent);
 				//Add the new point data
-				this.CurrentRune.Points.push(new Point(mousePosition.X, mousePosition.Y, this.StrokeId));
+				this.currentRune.points.push(new Point(mousePosition.x, mousePosition.y, this.strokeId));
 			} else if (type == "mouseup") {
-				let recognizedResult = this.Recognizer.Recognize(this.CurrentRune.Points);
+				let recognizedResult = this.recognizer.recognize(this.currentRune.points);
 				//WARNING Recognize adds 99-98 more randon points to a point array, which is why I made a clone of of the points and then recognized the clone.
-				if (recognizedResult.Score > 0.1) { //If they just drew something
-					this.GameState.newRune(recognizedResult.Name, this.CurrentRune.Points, "blue");
-					this.CurrentRune = new Rune([]);
+				if (recognizedResult.score > 0.1) { //If they just drew something
+					this.gameState.newRune(recognizedResult.name, this.currentRune.points, "blue");
+					this.currentRune = new Rune([]);
 				}
-				this.StrokeId++;
+				this.strokeId++;
 			}
-		} else if (this.Mode == "SELECTION") {
+		} else if (this.mode == "SELECTION") {
 			if (type == "mousedown") {
-				this.CurrentRune = new Rune([this.getMousePosition(passedEvent)]);
+				this.currentRune = new Rune([this.getMousePosition(passedEvent)]);
 			} else if (type == "mousemove") {
-				let startPos = this.CurrentRune.Points[0];
+				let startPos = this.currentRune.points[0];
 				let currentPos = this.getMousePosition(passedEvent);
-				this.CurrentRune.Points = [startPos, new Point(startPos.X, currentPos.Y), currentPos, new Point(currentPos.X, startPos.Y), startPos];
+				this.currentRune.points = [startPos, new Point(startPos.x, currentPos.y), currentPos, new Point(currentPos.x, startPos.y), startPos];
 			} else if (type == "mouseup") {
-				this.GameState.selectChalklingsInRect(this.CurrentRune.Points[0], this.CurrentRune.Points[2]);
-				this.CurrentRune = new Rune([]);
+				this.gameState.selectChalklingsInRect(this.currentRune.points[0], this.currentRune.points[2]);
+				this.currentRune = new Rune([]);
 			}
-		} else if (this.Mode == "COMMAND") {
+		} else if (this.mode == "COMMAND") {
 			if (type == "mousedown") {
 
 			} else if (type == "mousemove") {
 				let mousePosition = this.getMousePosition(passedEvent);
 				//Add the new point data
-				this.CurrentRune.Points.push(new Point(mousePosition.X, mousePosition.Y, this.StrokeId));
+				this.currentRune.points.push(new Point(mousePosition.x, mousePosition.y, this.strokeId));
 			} else if (type == "mouseup") {
-				this.GameState.moveSelectedAlongPath(this.CurrentRune.Points);
-				this.CurrentRune = new Rune([]);
+				this.gameState.moveSelectedAlongPath(this.currentRune.points);
+				this.currentRune = new Rune([]);
 			}
-		} else if (this.Mode == "STRAIGHTLINE") {
+		} else if (this.mode == "STRAIGHTLINE") {
 			if (type == "mousedown") {
-				this.CurrentRune = new Rune([this.getMousePosition(passedEvent)]);
+				this.currentRune = new Rune([this.getMousePosition(passedEvent)]);
 			} else if (type == "mousemove") {
-				this.CurrentRune.Points[1] = this.getMousePosition(passedEvent);
+				this.currentRune.points[1] = this.getMousePosition(passedEvent);
 			} else if (type == "mouseup") {
-				this.GameState.newRune("line", this.CurrentRune.Points, "ALKJADLSK");
+				this.gameState.newRune("line", this.currentRune.points, "ALKJADLSK");
 			}
 		}
 	}
 	getMousePosition(passedEvent) {
-
-		let parentOffset = $("#" + this.GameState.Element).offset();
-		//Offset allows for containers that don't fit thte entire page and work inside the surface.
+		let parentOffset = $("#" + this.gameState.element).offset();
+		//Offset allows for containers that don't fit thte entirepage and work inside the surface.
 		let relX = passedEvent.pageX - parentOffset.left;
 		let relY = passedEvent.pageY - parentOffset.top;
 		return new Point(relX, relY);
 	}
 	render() {
 		let path;
-		switch (this.Mode) {
+		switch (this.mode) {
 			case "DRAW":
-				path = this.CurrentRune.render("FILL");
+				path = this.currentRune.render("FILL");
 				break;
 			case "COMMAND":
-				path = this.CurrentRune.render("DASH");
+				path = this.currentRune.render("DASH");
 				break;
 			case "SELECTION":
-				path = this.CurrentRune.render("FADE");
+				path = this.currentRune.render("FADE");
 				break;
 			default:
-				path = this.CurrentRune.render();
+				path = this.currentRune.render();
 		}
-		return path.RenderString;
+		return path.renderString;
 	}
 }

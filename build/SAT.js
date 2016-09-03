@@ -338,18 +338,19 @@
 		}
 		decomp.makeCCW(decompPoly);
 		return decompPoly;
-	}
+	};
 	Polygon.prototype['getDecompPolygons'] = Polygon.prototype.getDecompPolygons = function() {
 		var decompPoly = this.getDecompPointFormat();
 		var newDecompPoints = decomp.quickDecomp(decompPoly);
 		var newPolyGons = [];
 		for (var i = 0; i < newDecompPoints.length; i++) {
+			decomp.makeCCW(newDecompPoints[i]);
 			var nextPoints = [];
 			for (var j = 0; j < newDecompPoints[i].length; j++) {
 				var currentDecompPoint = newDecompPoints[i][j];
-				nextPoints.push(new SAT.Vector(currentDecompPoint[0], currentDecompPoint[1]));
+				nextPoints.push(new Vector(currentDecompPoint[0], currentDecompPoint[1]));
 			}
-			var nextPoly = new SAT.Polygon(new Vector(), nextPoints);
+			var nextPoly = new Polygon(new Vector(), nextPoints);
 			newPolyGons.push(nextPoly);
 		}
 		return newPolyGons;

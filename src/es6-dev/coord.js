@@ -3,19 +3,19 @@ import Point from './point.js';
 /**
  * The $P Point-Cloud Recognizer (JavaScript version)
  *
- * 	Radu-Daniel Vatavu, Ph.D.
+ * 	Radu-Daniel Vatavu, Ph.d.
  *	University Stefan cel Mare of Suceava
  *	Suceava 720229, Romania
  *	vatavu@eed.usv.ro
  *
- *	Lisa Anthony, Ph.D.
+ *	Lisa Anthony, Ph.d.
  *      UMBC
  *      Information Systems Department
  *      1000 Hilltop Circle
  *      Baltimore, MD 21250
  *      lanthony@umbc.edu
  *
- *	Jacob O. Wobbrock, Ph.D.
+ *	Jacob O. Wobbrock, Ph.d.
  * 	The Information School
  *	University of Washington
  *	Seattle, WA 98195-2840
@@ -24,7 +24,7 @@ import Point from './point.js';
  * The academic publication for the $P recognizer, and what should be
  * used to cite it, is:
  *
- *	Vatavu, R.-D., Anthony, L. and Wobbrock, J.O. (2012).
+ *	Vatavu, R.-D., Anthony, L. and Wobbrock, J.o. (2012).
  *	  Gestures as point clouds: A $P recognizer for user interface
  *	  prototypes. Proceedings of the ACM Int'l Conference on
  *	  Multimodal Interfaces (ICMI '12). Santa Monica, California
@@ -81,31 +81,31 @@ function findIntersectionPoint(line1, line2) { //http://stackoverflow.com/a/5652
 }
 
 function movePointAlongLine(pt1, pt2, distanceToMove, percent) {
-	let dx = pt2.X - pt1.X;
-	let dy = pt2.Y - pt1.Y;
-	let distance = Distance(pt1, pt2);
-	let unitX = dx / distance;
-	let unitY = dy / distance;
-	let unitDistance = (percent) ? distanceToMove * distance : distanceToMove;
-	let newX = (unitX * unitDistance) + pt1.X;
-	let newY = (unitY * unitDistance) + pt1.Y;
+	let dx = pt2.x - pt1.x;
+	let dy = pt2.y - pt1.y;
+	let tempDistance = distance(pt1, pt2);
+	let unitX = dx / tempDistance;
+	let unitY = dy / tempDistance;
+	let unitDistance = (percent) ? distanceToMove * tempDistance : distanceToMove;
+	let newX = (unitX * unitDistance) + pt1.x;
+	let newY = (unitY * unitDistance) + pt1.y;
 	return new Point(newX, newY);
 
 }
 
-function GreedyCloudMatch(points, P) {
+function greedyCloudMatch(points, P) {
 	let e = 0.50;
 	let step = Math.floor(Math.pow(points.length, 1 - e));
 	let min = +Infinity;
 	for (let i = 0; i < points.length; i += step) {
-		let d1 = CloudDistance(points, P.Points, i);
-		let d2 = CloudDistance(P.Points, points, i);
+		let d1 = cloudDistance(points, P.points, i);
+		let d2 = cloudDistance(P.points, points, i);
 		min = Math.min(min, Math.min(d1, d2)); // min3
 	}
 	return min;
 }
 
-function CloudDistance(pts1, pts2, start) {
+function cloudDistance(pts1, pts2, start) {
 	let matched = new Array(pts1.length); // pts1.length == pts2.length
 	for (let k = 0; k < pts1.length; k++)
 		matched[k] = false;
@@ -116,7 +116,7 @@ function CloudDistance(pts1, pts2, start) {
 		let min = +Infinity;
 		for (let j = 0; j < matched.length; j++) {
 			if (!matched[j]) {
-				let d = Distance(pts1[i], pts2[j]);
+				let d = distance(pts1[i], pts2[j]);
 				if (d < min) {
 					min = d;
 					index = j;
@@ -131,17 +131,17 @@ function CloudDistance(pts1, pts2, start) {
 	return sum;
 }
 
-function Resample(points, n) {
-	let I = PathLength(points) / (n - 1); // interval length
+function resample(points, n) {
+	let I = pathLength(points) / (n - 1); // interval length
 	let D = 0.0;
 	let newpoints = new Array(points[0]);
 	for (let i = 1; i < points.length; i++) {
-		if (points[i].ID == points[i - 1].ID) {
-			let d = Distance(points[i - 1], points[i]);
+		if (points[i].id == points[i - 1].id) {
+			let d = distance(points[i - 1], points[i]);
 			if ((D + d) >= I) {
-				let qx = points[i - 1].X + ((I - D) / d) * (points[i].X - points[i - 1].X);
-				let qy = points[i - 1].Y + ((I - D) / d) * (points[i].Y - points[i - 1].Y);
-				let q = new Point(qx, qy, points[i].ID);
+				let qx = points[i - 1].x + ((I - D) / d) * (points[i].x - points[i - 1].x);
+				let qy = points[i - 1].y + ((I - D) / d) * (points[i].y - points[i - 1].y);
+				let q = new Point(qx, qy, points[i].id);
 				newpoints[newpoints.length] = q; // append new point 'q'
 				points.splice(i, 0, q); // insert 'q' at position i in points s.t. 'q' will be the next i
 				D = 0.0;
@@ -149,90 +149,90 @@ function Resample(points, n) {
 		}
 	}
 	if (newpoints.length == n - 1) // sometimes we fall a rounding-error short of adding the last point, so add it if so
-		newpoints[newpoints.length] = new Point(points[points.length - 1].X, points[points.length - 1].Y, points[points.length - 1].ID);
+		newpoints[newpoints.length] = new Point(points[points.length - 1].x, points[points.length - 1].y, points[points.length - 1].id);
 	return newpoints;
 }
 
-function Scale(points) {
+function scale(points) {
 	let minX = +Infinity,
 		maxX = -Infinity,
 		minY = +Infinity,
 		maxY = -Infinity;
 	for (let i = 0; i < points.length; i++) {
-		minX = Math.min(minX, points[i].X);
-		minY = Math.min(minY, points[i].Y);
-		maxX = Math.max(maxX, points[i].X);
-		maxY = Math.max(maxY, points[i].Y);
+		minX = Math.min(minX, points[i].x);
+		minY = Math.min(minY, points[i].y);
+		maxX = Math.max(maxX, points[i].x);
+		maxY = Math.max(maxY, points[i].y);
 	}
 	let size = Math.max(maxX - minX, maxY - minY);
 	let newpoints = [];
 	for (let i = 0; i < points.length; i++) {
-		let qx = (points[i].X - minX) / size;
-		let qy = (points[i].Y - minY) / size;
-		newpoints[newpoints.length] = new Point(qx, qy, points[i].ID);
+		let qx = (points[i].x - minX) / size;
+		let qy = (points[i].y - minY) / size;
+		newpoints[newpoints.length] = new Point(qx, qy, points[i].id);
 	}
 	return newpoints;
 }
 
-function TranslateTo(points, pt) // translates points' centroid
+function translateTo(points, pt) // translates points' centroid
 {
-	let c = Centroid(points);
+	let c = centroid(points);
 	let newpoints = [];
 	for (let i = 0; i < points.length; i++) {
-		let qx = points[i].X + pt.X - c.X;
-		let qy = points[i].Y + pt.Y - c.Y;
-		newpoints[newpoints.length] = new Point(qx, qy, points[i].ID);
+		let qx = points[i].x + pt.x - c.x;
+		let qy = points[i].y + pt.y - c.y;
+		newpoints[newpoints.length] = new Point(qx, qy, points[i].id);
 	}
 	return newpoints;
 }
 
-function Centroid(points) {
+function centroid(points) {
 	let x = 0.0,
 		y = 0.0;
 	for (let i = 0; i < points.length; i++) {
-		x += points[i].X;
-		y += points[i].Y;
+		x += points[i].x;
+		y += points[i].y;
 	}
 	x /= points.length;
 	y /= points.length;
 	return new Point(x, y, 0);
 }
 
-function PathDistance(pts1, pts2) // average distance between corresponding points in two paths
+function pathDistance(pts1, pts2) // average distance between corresponding points in two paths
 {
 	let d = 0.0;
 	for (let i = 0; i < pts1.length; i++) // assumes pts1.length == pts2.length
-		d += Distance(pts1[i], pts2[i]);
+		d += distance(pts1[i], pts2[i]);
 	return d / pts1.length;
 }
 
-function PathLength(points) // length traversed by a point path
+function pathLength(points) // length traversed by a point path
 {
 	let d = 0.0;
 	for (let i = 1; i < points.length; i++) {
-		if (points[i].ID == points[i - 1].ID)
-			d += Distance(points[i - 1], points[i]);
+		if (points[i].id == points[i - 1].id)
+			d += distance(points[i - 1], points[i]);
 	}
 	return d;
 }
 
-function Distance(p1, p2) // Euclidean distance between two points
+function distance(p1, p2) // Euclidean distance between two points
 {
-	let dx = p2.X - p1.X;
-	let dy = p2.Y - p1.Y;
+	let dx = p2.x - p1.x;
+	let dy = p2.y - p1.y;
 	return Math.sqrt(dx * dx + dy * dy);
 }
 
 export {
-	Distance,
-	PathLength,
-	PathDistance,
-	Centroid,
-	GreedyCloudMatch,
-	TranslateTo,
-	Scale,
-	Resample,
-	CloudDistance,
+	distance,
+	pathLength,
+	pathDistance,
+	centroid,
+	greedyCloudMatch,
+	translateTo,
+	scale,
+	resample,
+	cloudDistance,
 	movePointAlongLine,
 	findIntersectionPoint
 };

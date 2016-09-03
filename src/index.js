@@ -20,6 +20,7 @@ function gameLoop(timeStamp) {
 	update(changeInTime);
 	render();
 	requestAnimationFrame(gameLoop);
+
 }
 
 function update(time) {
@@ -28,7 +29,7 @@ function update(time) {
 
 function render() {
 	var svgElements = "<svg width='100%' height='100%'>" + b.render() + c.render() + "</svg>";
-	document.getElementById(b.Element).innerHTML = (svgElements);
+	document.getElementById(b.element).innerHTML = (svgElements);
 }
 
 // http://paulirish.com/2011/requestanimationframe-for-smart-animating/

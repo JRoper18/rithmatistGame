@@ -1,17 +1,17 @@
 export default class Unit {
 	constructor(name, id, player, position, attributes) {
-		this.Name = name;
-		this.ID = id;
-		this.Player = player;
-		this.Position = position;
-		this.Attributes = attributes;
-		this.Attributes.Health = this.Attributes.MaxHealth;
+		this.name = name;
+		this.id = id;
+		this.player = player;
+		this.position = position;
+		this.attributes = attributes;
+		this.attributes.health = this.attributes.maxHealth;
 	}
 	hasTags(...tags) {
 		let tagsMatch = 0;
-		for (let i = 0; i < this.Attributes.Tags; i++) {
+		for (let i = 0; i < this.attributes.tags; i++) {
 			for (let j = 0; j < tagslength; j++) {
-				if (this.Attributes.Tags[i] == tags[j]) {
+				if (this.attributes.tags[i] == tags[j]) {
 					tagsMatch++;
 					if (tagsMatch == tags.length) {
 						return true;
@@ -22,8 +22,8 @@ export default class Unit {
 		return false;
 	}
 	hasTag(tag) {
-			for (let i = 0; i < this.Attributes.Tags; i++) {
-				if (this.Attributes.Tags[i] == tag) {
+			for (let i = 0; i < this.attributes.tags; i++) {
+				if (this.attributes.tags[i] == tag) {
 					return true;
 				}
 			}

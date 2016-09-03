@@ -11,11 +11,11 @@ export default class Line extends Unit {
         "Hidden"
       ]
 		});
-		this.Point1 = point1;
-		this.Point2 = point2;
+		this.point1 = point1;
+		this.point2 = point2;
 	}
 	render() {
-		let renderString = "<line x1=\"" + this.Point1.X + "\" y1=\"" + this.Point1.Y + "\" x2=\"" + this.Point2.X + "\" y2=\"" + this.Point2.Y + "\" stroke-width=\"1\" stroke=\"black\"/>";
+		let renderString = "<line x1=\"" + this.point1.x + "\" y1=\"" + this.point1.y + "\" x2=\"" + this.point2.x + "\" y2=\"" + this.point2.y + "\" stroke-width=\"1\" stroke=\"black\"/>";
 		let element = new RenderedElement(
 			renderString,
 			"Line"

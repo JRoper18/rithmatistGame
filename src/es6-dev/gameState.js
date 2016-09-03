@@ -12,12 +12,12 @@ import SelectedOverlay from './selectedOverlay.js';
 
 export default class GameState {
 	constructor(element) {
-			this.Element = element;
-			this.Contains = [new Testling(1, "red", new Point(300, 0)), new Circle([new Point(100, 0, 1), new Point(170, 39, 1), new Point(200, 100, 1), new Point(170, 170, 1), new Point(100, 200, 1), new Point(39, 170, 1), new Point(0, 100, 1), new Point(39, 39, 1), new Point(100, 0, 1)
+			this.element = element;
+			this.contains = [new Testling(1, "red", new Point(300, 0)), new Circle([new Point(100, 0, 1), new Point(170, 39, 1), new Point(200, 100, 1), new Point(170, 170, 1), new Point(100, 200, 1), new Point(39, 170, 1), new Point(0, 100, 1), new Point(39, 39, 1), new Point(100, 0, 1)
     ], 2, "red")];
-			this.Selected = [];
-			this.Contains[0].moveTo(new Point(300, 300));
-			this.IDGenerator = this.getId();
+			this.selected = [];
+			this.contains[0].moveTo(new Point(300, 300));
+			this.idGenerator = this.getId();
 		} *
 		getId() {
 			let index = 3;
@@ -40,8 +40,8 @@ export default class GameState {
 		let mostLikelyCircleError = Infinity;
 		for (let i = 0; i < allCircles.length; i++) {
 			let tempCircle = allCircles[i];
-			let currentDistance = coord.Distance(tempCircle.Position, circle.Position);
-			let tempCircleError = currentDistance - (circle.Radius + tempCircle.Radius); //Measures to see how close the new circle is to touching the outside of the current one.
+			let currentDistance = coord.distance(tempCircle.position, circle.position);
+			let tempCircleError = currentDistance - (circle.radius + tempCircle.radius); //Measures to see how close the new circle is to touching the outside of the current one.
 			if (tempCircleError < mostLikelyCircleError) { //The ideal error is 0 (they are perfectly tangent circles)
 				mostLikelyCircleError = tempCircleError;
 				mostLikelyCircle = tempCircle;
@@ -49,33 +49,33 @@ export default class GameState {
 		}
 		if (mostLikelyCircleError > 50) { //If the error is too high (>50 pixels);
 			//Don't bind it, just make it unbinded.
-			this.Contains.push(circle);
+			this.contains.push(circle);
 		} else { //It's probably binded to the mostLikelyCircle
-			let currentToBinded = coord.Distance(circle.Position, mostLikelyCircle.Position);
-			let error = currentToBinded - circle.Radius - mostLikelyCircle.Radius;
-			circle.moveTo(coord.movePointAlongLine(circle.Position, mostLikelyCircle.Position, error));
+			let currentToBinded = coord.distance(circle.position, mostLikelyCircle.position);
+			let error = currentToBinded - circle.radius - mostLikelyCircle.radius;
+			circle.moveTo(coord.movePointAlongLine(circle.position, mostLikelyCircle.position, error));
 			mostLikelyCircle.bindRune(circle);
 		}
 	}
 	newRune(name, points, team) {
 		switch (name) {
 			case "circle":
-				let circle = new Circle(points, this.IDGenerator.next(), "blue");
+				let circle = new Circle(points, this.idGenerator.next(), "blue");
 				this.newCircle(circle);
 				break;
 			case "attack":
-				this.Contains.push(new Testling(this.IDGenerator.next(), team, new Point(coord.Centroid(points).X, coord.Centroid(points).Y)));
+				this.contains.push(new Testling(this.idGenerator.next(), team, new Point(coord.centroid(points).x, coord.centroid(points).y)));
 				break;
 			case "line":
-				let distance = coord.Distance(points[0], points[1]);
+				let distance = coord.distance(points[0], points[1]);
 				let lines = [];
 				for (let i = 0; i < distance / 10; i++) {
 					let point1 = coord.movePointAlongLine(points[0], points[1], i * 10);
 					let point2 = coord.movePointAlongLine(points[0], points[1], (i + 1) * 10);
-					let line = new Line(point1, point2, this.IDGenerator.next(), team);
+					let line = new Line(point1, point2, this.idGenerator.next(), team);
 					lines.push(line);
 					//TODO: Don't just push it randomly
-					this.Contains.push(line);
+					this.contains.push(line);
 				}
 				//TODO: Check the first, last, and middle lines to circle bind points and then bind them.
 				break;
@@ -84,9 +84,9 @@ export default class GameState {
 		}
 	}
 	moveSelectedAlongPath(path) {
-		if (this.Selected[0] !== null) {
-			for (let i = 0; i < this.Selected.length; i++) {
-				let currentSelected = this.Selected[i];
+		if (this.selected[0] !== null) {
+			for (let i = 0; i < this.selected.length; i++) {
+				let currentSelected = this.selected[i];
 				currentSelected.moveAlongPath(path);
 			}
 		}
@@ -94,18 +94,18 @@ export default class GameState {
 	getBinded(callback = function() {}, parent = false) { //depth-first search.
 		//If parent is true, the callback will be function(parent, child)
 		let binded = [];
-		for (let i = 0; i < this.Contains.length; i++) {
-			this.getBindedIncursion(this.Contains[i], binded, callback, parent);
+		for (let i = 0; i < this.contains.length; i++) {
+			this.getBindedIncursion(this.contains[i], binded, callback, parent);
 		}
 		return binded;
 	}
 	getBindedIncursion(rune, binded, callback, parent) {
-		if (typeof rune.HasBinded != "undefined") { //has binded stuff, find it recursively
+		if (typeof rune.hasBinded != "undefined") { //has binded stuff, find it recursively
 			if (parent) {
 				callback(rune);
 			}
-			for (let i = 0; i < rune.HasBinded.length; i++) {
-				this.getBindedIncursion(rune.HasBinded[i], binded, callback, parent);
+			for (let i = 0; i < rune.hasBinded.length; i++) {
+				this.getBindedIncursion(rune.hasBinded[i], binded, callback, parent);
 			}
 			binded.push(rune);
 		} else {
@@ -118,9 +118,9 @@ export default class GameState {
 	removeDeadChalklings() {
 		this.getBinded((rune) => {
 			if (this.isChalkling(rune)) {
-				if (rune.CurrentAction == "DEATH") {
-					this.Contains.splice(this.Contains.indexOf(rune), 1); //If the chalkling is dead, removes is from board.
-					this.Selected.splice(this.Contains.indexOf(rune), 1); //Also, make sure you unselect it.
+				if (rune.currentAction == "DEATH") {
+					this.contains.splice(this.contains.indexOf(rune), 1); //If the chalkling is dead, removes is from board.
+					this.selected.splice(this.contains.indexOf(rune), 1); //Also, make sure you unselect it.
 				}
 			}
 		});
@@ -134,26 +134,35 @@ export default class GameState {
 					continue;
 				}
 				if (this.isChalkling(runes[j])) {
-					let currentDistance = coord.Distance(runes[j].Position, runes[k].Position);
-					if (currentDistance < runes[j].Attributes.ViewRange) {
+					let currentDistance = coord.distance(runes[j].position, runes[k].position);
+					if (currentDistance < runes[j].attributes.viewRange) {
 						newSees.push(runes[k]);
 					}
 				}
 
 			}
-			runes[j].Sees = newSees;
+			runes[j].sees = newSees;
 		}
 	}
 	doCircleChalklingCollision(circle, chalkling) {
-		let validPolygons = circle.CollisionPolygons;
+		let validPolygons = circle.collisionPolygons;
 		for (let i = 0; i < validPolygons.length; i++) {
 			let response = new SAT.Response();
 			let currentlyTestedPolygon = validPolygons[i];
-			if (SAT.testPolygonPolygon(new SAT.Box(new SAT.Vector(chalkling.TopLeft.X, chalkling.TopLeft.Y), 100, 100).toPolygon(), currentlyTestedPolygon, response)) {
-				chalkling.Position.X -= (response.overlapV.x);
-				chalkling.Position.Y -= (response.overlapV.y);
+			const BOUNCE = -10;
+			let chalklingBox = new SAT.Box(new SAT.Vector(chalkling.topLeft.x, chalkling.topLeft.y), 100, 100).toPolygon();
+			if (SAT.testPolygonPolygon(chalklingBox, currentlyTestedPolygon, response)) {
+				console.log("Collision");
+				if ((response.overlapV.x === 0 || response.overlapV.x === -0) && (response.overlapV.y === 0 || response.overlapV.y === -0)) {
+					coord.movePointAlongLine(chalkling.position, circle.position, BOUNCE);
+				} else {
+					chalkling.position.x -= (response.overlapV.x);
+					chalkling.position.y -= (response.overlapV.y);
+				}
 				chalkling.override();
 			}
+			response.clear();
+
 		}
 	}
 	updateHitboxes() {
@@ -187,15 +196,15 @@ export default class GameState {
 					//For now, it's ok for them to overlap. Uncomment if you want them not to.
 					/*
 					//Create a bounding box around chalkling
-					let firstChalklingBox = new B(new V(entity1.TopLeft.X, entity1.TopLeft.Y), 100, 100).toPolygon();
-					let secondChalklingBox = new B(new V(entity2.TopLeft.X, entity2.TopLeft.Y), 100, 100).toPolygon();
+					let firstChalklingBox = new B(new V(entity1.topLeft.x, entity1.topLeft.y), 100, 100).toPolygon();
+					let secondChalklingBox = new B(new V(entity2.topLeft.x, entity2.topLeft.y), 100, 100).toPolygon();
 					let collided = SAT.testPolygonPolygon(firstChalklingBox, secondChalklingBox, response);
 					if(collided){
 					  let collidedVector = response.overlapV.scale(0.5); //How much they overlap
-					  entity1.Position.X -=collidedVector.x;
-					  entity1.Position.Y -=collidedVector.y;
-					  entity2.Position.X +=collidedVector.x;
-					  entity2.Position.Y +=collidedVector.y;
+					  entity1.position.x -=collidedVector.x;
+					  entity1.position.y -=collidedVector.y;
+					  entity2.position.x +=collidedVector.x;
+					  entity2.position.y +=collidedVector.y;
 					}
 					*/
 				}
@@ -203,52 +212,52 @@ export default class GameState {
 		}
 	}
 	removeDeadBindedRunes(runeType) {
-		for (let j = 0; j < this.Contains.length; j++) {
-			if (this.Contains[j].constructor.name == runeType) {
-				if (this.Contains[j].Attributes.Health <= 0) {
-					this.Contains.splice(j, 1);
+		for (let j = 0; j < this.contains.length; j++) {
+			if (this.contains[j].constructor.name == runeType) {
+				if (this.contains[j].attributes.health <= 0) {
+					this.contains.splice(j, 1);
 				}
 			}
 		}
 		this.getBinded(function(parent) { //This will remove circles that are binded. We also need to check the top-level circles as well (done above).
-			for (let i = 0; i < parent.HasBinded.length; i++) {
-				if (parent.HasBinded[i].Attributes.Health <= 0) {
-					parent.HasBinded.splice(i, 1);
+			for (let i = 0; i < parent.hasBinded.length; i++) {
+				if (parent.hasBinded[i].attributes.health <= 0) {
+					parent.hasBinded.splice(i, 1);
 				}
 			}
 		}, true);
 	}
 	selectChalklingAtPoint(point) {
-		let V = SAT.Vector;
+		let V = SAT.vector;
 		let B = SAT.Box;
-		let vecPoint = new V(point.X, point.Y);
+		let vecPoint = new V(point.x, point.y);
 		let chalkling = null;
 		this.getBinded((rune) => {
 			if (this.isChalkling(rune)) {
-				if (SAT.pointInPolygon(vecPoint, new B(new V(rune.TopLeft.X, rune.TopLeft.Y), 100, 100).toPolygon())) {
+				if (SAT.pointInPolygon(vecPoint, new B(new V(rune.topLeft.x, rune.topLeft.y), 100, 100).toPolygon())) {
 					chalkling = rune;
 				}
 			}
 		});
-		this.Selected = [chalkling];
+		this.selected = [chalkling];
 	}
 	selectChalklingsInRect(point1, point2) {
 		let V = SAT.Vector;
 		let B = SAT.Box;
-		let lesserX = (point1.X > point2.X) ? point2.X : point1.X;
-		let lesserY = (point1.Y > point2.Y) ? point2.Y : point1.Y;
-		let greaterX = (point1.X < point2.X) ? point2.X : point1.X;
-		let greaterY = (point1.Y < point2.Y) ? point2.Y : point1.Y;
+		let lesserX = (point1.x > point2.x) ? point2.x : point1.x;
+		let lesserY = (point1.y > point2.y) ? point2.y : point1.y;
+		let greaterX = (point1.x < point2.x) ? point2.x : point1.x;
+		let greaterY = (point1.y < point2.y) ? point2.y : point1.y;
 		let selected = [];
 		this.getBinded((rune) => {
 			if (this.isChalkling(rune)) {
-				let vecPoint = new V(rune.Position.X, rune.Position.Y);
+				let vecPoint = new V(rune.position.x, rune.position.y);
 				if (SAT.pointInPolygon(vecPoint, new B(new V(lesserX, lesserY), greaterX - lesserX, greaterY - lesserY).toPolygon())) {
 					selected.push(rune);
 				}
 			}
 		});
-		this.Selected = selected;
+		this.selected = selected;
 	}
 	isChalkling(rune) {
 		if (rune.__proto__ instanceof Chalkling) {
@@ -259,8 +268,8 @@ export default class GameState {
 	}
 	renderSelected() {
 		let selectedArray = [];
-		for (let i = 0; i < this.Selected.length; i++) {
-			let currentRunePosition = this.Selected[i].TopLeft;
+		for (let i = 0; i < this.selected.length; i++) {
+			let currentRunePosition = this.selected[i].topLeft;
 			selectedArray.push(new SelectedOverlay(currentRunePosition));
 		}
 		return selectedArray;
@@ -285,13 +294,13 @@ export default class GameState {
 			let runeElements = rune.render();
 			for (let i = 0; i < runeElements.length; i++) { //Some render functions return multiple renderedElements, so go through all of them.
 				let tempElement = runeElements[i];
-				let order = devConfig.renderOrder[tempElement.Type]; //Get the render order based on the current rune's type
+				let order = devConfig.renderOrder[tempElement.type]; //Get the render order based on the current rune's type
 				if (renderedElements.length === 0) {
 					renderedElements.push(tempElement);
 				} else {
 					let inserted = false;
 					for (let j = 0; j < renderedElements.length; j++) {
-						let checkedElementOrder = devConfig.renderOrder[renderedElements[j].Type];
+						let checkedElementOrder = devConfig.renderOrder[renderedElements[j].type];
 						if (order < checkedElementOrder) { //We've searched too far in the array and found people with higher rendering order.
 							renderedElements.splice(j, 0, tempElement); //Insert us at the end of our rendering section.
 							inserted = true;
@@ -306,7 +315,7 @@ export default class GameState {
 		}
 		let renderString = '';
 		for (let i = 0; i < renderedElements.length; i++) {
-			renderString += renderedElements[i].RenderString;
+			renderString += renderedElements[i].renderString;
 		}
 		return renderString;
 	}

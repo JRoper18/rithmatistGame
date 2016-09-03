@@ -3,48 +3,48 @@ import Chalkling from './chalkling.js';
 export class Testling extends Chalkling {
 	constructor(id, player, position) {
 		super("Testling", id, player, position, {
-			"MaxHealth": 100,
-			"Attack": 10,
-			"AttackRange": 200,
-			"MovementSpeed": 100,
-			"ViewRange": 3000,
-			"AnimationData": {
+			"maxHealth": 100,
+			"attack": 10,
+			"attackRange": 200,
+			"movementSpeed": 100,
+			"viewRange": 3000,
+			"animationData": {
 				"IDLE": {
-					"Frames": 1,
-					"Time": 1000,
-					"Size": {
-						"X": 259,
-						"Y": 194
+					"frames": 1,
+					"time": 1000,
+					"size": {
+						"x": 259,
+						"y": 194
 					}
 				},
 				"WALK": {
-					"Frames": 6,
-					"Time": 800,
-					"Size": {
-						"X": 1500,
-						"Y": 250
+					"frames": 6,
+					"time": 800,
+					"size": {
+						"x": 1500,
+						"y": 250
 					}
 				},
 				"ATTACK": {
-					"Frames": 17,
-					"Time": 2000,
-					"Size": {
-						"X": 10850,
-						"Y": 374
+					"frames": 17,
+					"time": 2000,
+					"size": {
+						"x": 10850,
+						"y": 374
 					}
 				},
 				"DYING": {
-					"Frames": 19,
-					"Time": 1000,
-					"Size": {
-						"X": 6650,
-						"Y": 250
+					"frames": 19,
+					"time": 1000,
+					"size": {
+						"x": 6650,
+						"y": 250
 					}
 				}
 			},
-			"Tags": [
-        "Mobile",
-        "Destructible",
+			"tags": [
+        "mobile",
+        "destructible",
       ]
 		});
 	}
