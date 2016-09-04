@@ -4,11 +4,11 @@ import RenderedElement from './renderedElement.js';
 export default class Line extends Unit {
 	constructor(point1, point2, id, player) {
 		super("Line", id, player, point1, {
-			"MaxHealth": 50,
-			"Health": 50,
-			"Tags": [
-        "Destructible",
-        "Hidden"
+			"maxHealth": 50,
+			"health": 50,
+			"tags": [
+        "destructible",
+        "hidden"
       ]
 		});
 		this.point1 = point1;

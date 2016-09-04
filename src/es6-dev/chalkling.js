@@ -154,7 +154,7 @@ export default class Chalkling extends Unit {
 				}
 			} else { //Follow him!
 				this.currentAction = "WALK";
-				this.moveTo(this.target.position);
+				this.path = [this.target.position];
 			}
 		}
 	}

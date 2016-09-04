@@ -11,13 +11,15 @@ import RenderedElement from './renderedElement.js';
 import SelectedOverlay from './selectedOverlay.js';
 
 export default class GameState {
-	constructor(element) {
+	constructor(element, size) {
 			this.element = element;
 			this.contains = [new Testling(1, "red", new Point(300, 0)), new Circle([new Point(100, 0, 1), new Point(170, 39, 1), new Point(200, 100, 1), new Point(170, 170, 1), new Point(100, 200, 1), new Point(39, 170, 1), new Point(0, 100, 1), new Point(39, 39, 1), new Point(100, 0, 1)
     ], 2, "red")];
 			this.selected = [];
+			this.size = size;
 			this.contains[0].moveTo(new Point(300, 300));
 			this.idGenerator = this.getId();
+
 		} *
 		getId() {
 			let index = 3;
@@ -144,23 +146,19 @@ export default class GameState {
 			runes[j].sees = newSees;
 		}
 	}
-	doCircleChalklingCollision(circle, chalkling) {
-		let validPolygons = circle.collisionPolygons;
-		for (let i = 0; i < validPolygons.length; i++) {
-			let response = new SAT.Response();
-			let currentlyTestedPolygon = validPolygons[i];
-			const BOUNCE = 10;
-			let chalklingBox = new SAT.Box(new SAT.Vector(chalkling.topLeft.x, chalkling.topLeft.y), 100, 100).toPolygon();
-			if (SAT.testPolygonPolygon(chalklingBox, currentlyTestedPolygon, response)) {
-				console.log("Collision");
-				chalkling.position.x -= (response.overlapV.x);
-				chalkling.position.y -= (response.overlapV.y);
-				chalkling.position = coord.movePointAlongLine(chalkling.position, circle.position, -1 * BOUNCE); //Fallback if we ever get a collision of 0 (we usually do, our library is faulty)
-				chalkling.override();
-			}
-			response.clear();
-
+	doCircleChalklingCollision(circle, chalkling) { //TODO: Count how many collisions each chalkling has recently had so we don't end up with an endless-ly bouncing chalkling.
+		let response = new SAT.Response();
+		let currentlyTestedPolygon = circle.collisionPolygon;
+		const BOUNCE = devConfig.chalklingCollisionBounce;
+		let chalklingBox = new SAT.Box(new SAT.Vector(chalkling.topLeft.x, chalkling.topLeft.y), 100, 100).toPolygon();
+		if (SAT.testPolygonPolygon(chalklingBox, currentlyTestedPolygon, response)) {
+			console.log("Collision");
+			chalkling.position.x -= (response.overlapV.x);
+			chalkling.position.y -= (response.overlapV.y);
+			chalkling.position = coord.movePointAlongLine(chalkling.position, circle.position, -1 * BOUNCE); //Fallback if we ever get a collision of 0 (we usually do, our library is faulty)
+			chalkling.override();
 		}
+		response.clear();
 	}
 	updateHitboxes() {
 		let runes = this.getBinded();

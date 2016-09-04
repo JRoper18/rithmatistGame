@@ -6,8 +6,8 @@ import RenderedElement from './renderedElement.js';
 import Rune from './rune.js';
 export default class Circle extends Unit {
 	constructor(points, id, player) {
-		points.push(points[0]);
 		//Close the circle
+		points.push(points[0]);
 
 		let position = coord.centroid(points);
 
@@ -22,6 +22,7 @@ export default class Circle extends Unit {
 		} else {
 			points = coord.resample(points, Math.round(radius));
 		}
+		position = coord.centroid(points);
 		const MAX = Math.round(radius) * 10; //Health is related to the number of points (10 health per point) which is the Radius. E.g bigger circle = more points = more health
 		let health = MAX;
 		for (let i = 0; i < points.length; i++) { //Deduct health for each point that's off center.
@@ -60,8 +61,8 @@ export default class Circle extends Unit {
 				nextPoint = this.points[0];
 			}
 			for (let i = 0; i < this.points.length; i++) {
-				const orient = ((nextPoint.x - currentPoint.x) * (this.points[i].y - currentPoint.y) - (nextPoint.y - currentPoint.y) * (this.points[i].x - currentPoint.x));
-				if (orient > 0) { //We found a most that is to the left (more outer) than our nextPoint
+				const orientation = ((nextPoint.x - currentPoint.x) * (this.points[i].y - currentPoint.y) - (nextPoint.y - currentPoint.y) * (this.points[i].x - currentPoint.x));
+				if (orientation > 0) { //We found a most that is to the left (more outer) than our nextPoint
 					nextPoint = this.points[i];
 				}
 			}
@@ -72,6 +73,7 @@ export default class Circle extends Unit {
 		} while (currentPoint != firstPoint);
 		hull.push(firstPoint); //Finish the loop
 		this.points = hull;
+		this.position = coord.centroid(this.points);
 	}
 	toSATPolygon() {
 		let P = SAT.Polygon; //Shortening for easier typing
@@ -82,11 +84,7 @@ export default class Circle extends Unit {
 		}
 		let polygon = new P(new V(), pointArray);
 		//Now check to see if we are clockwise or counter-clockwise : http://stackoverflow.com/questions/1165647/how-to-determine-if-a-list-of-polygon-points-are-in-clockwise-order
-		this.collisionPolygons = [polygon];
-	}
-	decompPolygons(polygon) {
-		let validPolygons = polygon.getDecompPolygons();
-		this.collisionPolygons = validPolygons;
+		this.collisionPolygon = polygon;
 	}
 	averageDistanceFromCenter() {
 		let distances = 0;

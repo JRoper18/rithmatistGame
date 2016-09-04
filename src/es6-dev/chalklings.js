@@ -2,7 +2,7 @@ import Chalkling from './chalkling.js';
 
 export class Testling extends Chalkling {
 	constructor(id, player, position) {
-		super("Testling", id, player, position, {
+		super("Testling", id, player, position, { //Flyweight pattern
 			"maxHealth": 100,
 			"attack": 10,
 			"attackRange": 200,

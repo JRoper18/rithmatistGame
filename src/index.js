@@ -2,15 +2,26 @@ console.log(`hello world from ${__dirname}`);
 import Canvas from './es6-dev/canvas.js';
 import GameState from './es6-dev/gameState.js';
 import Circle from './es6-dev/circle.js';
+import Minimap from './es6-dev/minimap.js';
 import {
 	getUserRunes
 } from './es6-dev/runeData.js';
-let b, c;
+let b, c, m;
 let lastFrameTime = 0;
 
 window.onload = function() {
-	b = new GameState('content');
+	b = new GameState('content', {
+		"x": 720,
+		"y": 1000
+	});
 	c = new Canvas(b, ["circle", "attack"]);
+	m = new Minimap({
+		"x": 0,
+		"y": 0
+	}, {
+		"x": 100,
+		"y": 100
+	}, b);
 	requestAnimationFrame(gameLoop);
 };
 
@@ -27,7 +38,7 @@ function update(time) {
 }
 
 function render() {
-	var svgElements = "<svg width='100%' height='100%'>" + b.render() + c.render() + "</svg>";
+	var svgElements = "<svg width='100%' height='100%'>" + b.render() + c.render() + m.render() + "</svg>";
 	document.getElementById(b.element).innerHTML = (svgElements);
 }
 
