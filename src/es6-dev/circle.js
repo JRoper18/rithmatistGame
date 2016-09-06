@@ -4,42 +4,40 @@ import * as coord from './coord.js';
 import Point from './point.js';
 import RenderedElement from './renderedElement.js';
 import Rune from './rune.js';
+import SAT from './SAT.js';
 export default class Circle extends Unit {
 	constructor(points, id, player) {
 		//Close the circle
-		points.push(points[0]);
-
 		let position = coord.centroid(points);
-
+		super("Circle", id, player, position, {});
+		this.points = points;
+		this.hasBinded = [];
+		this.bindPointsCoord = [];
+		this.bindPointsDegrees = [];
+		this.getConvexHull();
+		this.setHealth();
+		this.toSATPolygon();
+	}
+	setHealth(points) {
+		this.points.pop();
 		//Find the average distance (radius)
 		let distances = 0;
-		for (let i = 0; i < points.length; i++) {
-			distances += coord.distance(position, points[i]);
+		this.position = coord.centroid(this.points);
+		for (let i = 0; i < this.points.length; i++) {
+			distances += coord.distance(this.position, this.points[i]);
 		}
-		let radius = distances / points.length;
-		if (points.length < Math.round(radius)) {
-
-		} else {
-			points = coord.resample(points, Math.round(radius));
-		}
-		position = coord.centroid(points);
+		let radius = distances / this.points.length;
 		const MAX = Math.round(radius) * 10; //Health is related to the number of points (10 health per point) which is the Radius. E.g bigger circle = more points = more health
 		let health = MAX;
-		for (let i = 0; i < points.length; i++) { //Deduct health for each point that's off center.
-			let distance = coord.distance(points[i], position);
+		for (let i = 0; i < this.points.length; i++) { //Deduct health for each point that's off center.
+			let distance = coord.distance(this.points[i], this.position);
 			health -= (distance / radius);
 			//This means that a big circle will allow for more error.
 		}
-		let attr = {
-			"maxHealth": MAX,
-			"health": health
-		};
-		super("Circle", id, player, position, attr);
-		this.points = points;
+		this.points.push(this.points[0]);
+		this.attributes.maxHealth = MAX;
+		this.attributes.health = health;
 		this.radius = radius;
-		this.hasBinded = [];
-		this.getConvexHull();
-		this.toSATPolygon();
 	}
 	getConvexHull() { //When someone draws lines they can be complex (self-intersecting) which makes it impossible to detect collisions.
 		//We need to make a hull of the polygon which is convex: http://www.cs.jhu.edu/~misha/Fall05/09.13.05.pdf
@@ -118,7 +116,93 @@ export default class Circle extends Unit {
 		}
 	}
 	bindRune(rune) {
+		const pointOfBinding = coord.movePointAlongLine(this.position, rune.position, this.radius);
+		const pointInDegrees = Math.atan((pointOfBinding.y - this.position.y) / (pointOfBinding.x - this.position.x)) * (180 / Math.PI);
+		this.bindPointsCoord.push(pointOfBinding);
+		this.bindPointsDegrees.push(pointInDegrees);
 		this.hasBinded.push(rune);
+		let possibleBindPoints = {
+			"2": [0, 180], //Two point
+			"4": [0, 90, 180, -90], //Four point
+			"6": [0, 60, 120, 180, -120, -60], //Six Point
+			//Nine-point circle guessed based on this image: https://upload.wikimedia.org/wikipedia/commons/thumb/7/71/Nine-point_circle.svg/2000px-Nine-point_circle.svg.png\
+			//TODO: Calculate points for 9 point circle
+			"9": [0, 60, 100, 165, 180, 225, 235, 245, 335]
+		};
+		if (this.hasBinded.length !== 1) { //Nothing has been binded yet, so let this be the first point.
+			//We need to eliminate possible bind point configurations.
+			if (this.hasBinded.length > 3) {
+				delete possibleBindPoints['2'];
+			}
+			if (this.hasBinded.length > 5) {
+				delete possibleBindPoints['4'];
+			}
+			if (this.hasBinded.length > 7) {
+				delete possibleBindPoints['6'];
+			}
+			//We need to rotate our circle to make the first point 0.
+			const offset = this.bindPointsDegrees[0];
+			const errorGiven = devConfig.bindPointErrorGiven;
+			let rotatedPoints = [];
+			for (let i = 0; i < this.bindPointsDegrees.length; i++) {
+				const rotatedPoint = this.bindPointsDegrees[i] - offset;
+				if (Math.abs(rotatedPoint - 90) < errorGiven || Math.abs(rotatedPoint + 90) < errorGiven) { //Telltale way to check if we're dealing with 4 point circle is to see if we have a 90 degree turn somewhere
+					delete possibleBindPoints['2'];
+					delete possibleBindPoints['6'];
+					delete possibleBindPoints['9'];
+				} else if (Math.abs(rotatedPoint - 60) < errorGiven) {
+					delete possibleBindPoints['2'];
+					delete possibleBindPoints['4'];
+				} else if (Math.abs(rotatedPoint + 60) < errorGiven || Math.abs(rotatedPoint - 120) < errorGiven) {
+					delete possibleBindPoints['2'];
+					delete possibleBindPoints['4'];
+					delete possibleBindPoints['9'];
+				}
+				rotatedPoints.push(rotatedPoint);
+			}
+			//We now have the possible bind point configuration
+			let bestBindPointConfigError = Infinity;
+			let bestBindPointConfig;
+			let currentBindPoints = rotatedPoints;
+			let availibleBindPoints = Object.assign({}, possibleBindPoints);
+			let newRuneAccuracy;
+			for (let bindPointConfigId in availibleBindPoints) {
+				if (possibleBindPoints.hasOwnProperty(bindPointConfigId)) { //FIXME: RIght now, the bind points are checked in a way such that if we have points that match, but then another point might match better, it won't find out.
+					let bindPointConfig = availibleBindPoints[bindPointConfigId];
+					let bindPointConfigError = 0;
+					let newRuneAccuracyForThisConfig;
+					//Calculate the strength of our current bind point configuration
+					for (let i = 0; i < currentBindPoints.length; i++) {
+						let closestBindPointError = Infinity;
+						let closestBindPoint;
+						for (let bindPointId in bindPointConfig) {
+							let bindPoint = bindPointConfig[bindPointId];
+							let tempBindPointError = Math.abs(bindPoint - currentBindPoints[i]);
+							if (tempBindPointError < closestBindPointError) {
+								closestBindPoint = bindPoint;
+								closestBindPointError = tempBindPointError;
+
+							}
+						}
+						//We found the closest one, dont let multiple points be assigned to the same bindpoint. If we're checking the last (new) bindpoint, save it for later.
+						if (i == currentBindPoints.length - 1) {
+							newRuneAccuracyForThisConfig = closestBindPointError;
+						}
+						bindPointConfig.splice(bindPointConfig.indexOf(closestBindPoint), 1);
+						bindPointConfigError += closestBindPointError;
+					}
+					if (bindPointConfigError < bestBindPointConfigError) {
+						bestBindPointConfig = possibleBindPoints[bindPointConfigId];
+						bestBindPointConfigError = bindPointConfigError;
+						newRuneAccuracy = newRuneAccuracyForThisConfig;
+					}
+				}
+			}
+			//Found best point configuration. Take away maxhealth of our rune based on our accuracy towards the bindpoint.
+			rune.attributes.maxHealth -= newRuneAccuracy;
+			rune.attributes.health -= newRuneAccuracy;
+			this.bindPointConfig = bestBindPointConfig.length;
+		}
 	}
 	renderBinded() {
 		let renderString = '';

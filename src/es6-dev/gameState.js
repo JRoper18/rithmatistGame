@@ -9,6 +9,7 @@ import Chalkling from './chalkling.js';
 import Line from './line.js';
 import RenderedElement from './renderedElement.js';
 import SelectedOverlay from './selectedOverlay.js';
+import SAT from './SAT.js';
 
 export default class GameState {
 	constructor(element, size) {
@@ -76,10 +77,10 @@ export default class GameState {
 					let point2 = coord.movePointAlongLine(points[0], points[1], (i + 1) * 10);
 					let line = new Line(point1, point2, this.idGenerator.next(), team);
 					lines.push(line);
-					//TODO: Don't just push it randomly
+					//TODO:20 Don't just push it randomly, bind it
 					this.contains.push(line);
 				}
-				//TODO: Check the first, last, and middle lines to circle bind points and then bind them.
+				//TODO:0 Check the first, last, and middle lines to circle bind points and then bind them.
 				break;
 			default:
 
@@ -146,7 +147,7 @@ export default class GameState {
 			runes[j].sees = newSees;
 		}
 	}
-	doCircleChalklingCollision(circle, chalkling) { //TODO: Count how many collisions each chalkling has recently had so we don't end up with an endless-ly bouncing chalkling.
+	doCircleChalklingCollision(circle, chalkling) { //TODO:10 Count how many collisions each chalkling has recently had so we don't end up with an endless-ly bouncing chalkling.
 		let response = new SAT.Response();
 		let currentlyTestedPolygon = circle.collisionPolygon;
 		const BOUNCE = devConfig.chalklingCollisionBounce;
