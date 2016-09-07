@@ -7,7 +7,7 @@ export default class Minimap {
 	render() {
 		const SCALEX = this.size.x / this.game.size.x;
 		const SCALEY = this.size.y / this.game.size.y;
-		let innerUnitSVGString = ''
+		let innerUnitSVGString = '';
 		this.game.getBinded((unit) => {
 			innerUnitSVGString += "<rect x=\"" + (unit.position.x * SCALEX).toString() + "\" y = \"" + (unit.position.y * SCALEY).toString() + "\" width=\"5\" height=\"5\" />";
 		});

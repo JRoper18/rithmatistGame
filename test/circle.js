@@ -35,6 +35,8 @@ describe("The Circle Class", function() {
 				new Point(1, 2), //Bad
 				new Point(0, 0)
 			], 0, "test");
+
+			//TODO: Calculate theoretical accuracy of this circle. 
 		});
 	});
 });

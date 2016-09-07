@@ -256,11 +256,7 @@ export default class GameState {
 		this.selected = selected;
 	}
 	isChalkling(rune) {
-		if (rune.__proto__ instanceof Chalkling) {
-			return true;
-		} else {
-			return false;
-		}
+		return (rune.__proto__ instanceof Chalkling)
 	}
 	renderSelected() {
 		let selectedArray = [];

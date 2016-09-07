@@ -16,9 +16,11 @@ export default class Circle extends Unit {
 		this.bindPointsDegrees = [];
 		this.getConvexHull();
 		this.setHealth();
+		this.deductHealth();
 		this.toSATPolygon();
+		//BUG: Sometimes crashes game, probably via infinite loop. (1/100 times)
 	}
-	setHealth(points) {
+	setHealth() {
 		this.points.pop();
 		//Find the average distance (radius)
 		let distances = 0;
@@ -27,17 +29,23 @@ export default class Circle extends Unit {
 			distances += coord.distance(this.position, this.points[i]);
 		}
 		let radius = distances / this.points.length;
-		const MAX = Math.round(radius) * 10; //Health is related to the number of points (10 health per point) which is the Radius. E.g bigger circle = more points = more health
+		this.radius = radius;
+
+		const MAX = Math.round(this.radius) * 10; //Health is related to the number of points (10 health per point) which is the Radius. E.g bigger circle = more points = more health
 		let health = MAX;
+		this.attributes.possibleHealth = MAX;
+		this.attributes.health = health;
+	}
+	deductHealth() {
+		let health = this.attributes.health;
 		for (let i = 0; i < this.points.length; i++) { //Deduct health for each point that's off center.
 			let distance = coord.distance(this.points[i], this.position);
-			health -= (distance / radius);
+			health -= (distance / this.radius);
 			//This means that a big circle will allow for more error.
 		}
 		this.points.push(this.points[0]);
-		this.attributes.maxHealth = MAX;
+		this.attributes.maxHealth = health;
 		this.attributes.health = health;
-		this.radius = radius;
 	}
 	getConvexHull() { //When someone draws lines they can be complex (self-intersecting) which makes it impossible to detect collisions.
 		//We need to make a hull of the polygon which is convex: http://www.cs.jhu.edu/~misha/Fall05/09.13.05.pdf
@@ -96,7 +104,7 @@ export default class Circle extends Unit {
 		this.points = coord.translateTo(this.points, point);
 		this.position = point;
 	}
-	getBinded(onextPointject = "Circle") { //depth-first search to find all objects of type object
+	getBinded(object) { //depth-first search to find all objects of type object
 		let binded = [];
 		this.getBindedIncursion(this, object, binded);
 		return binded;
@@ -199,10 +207,29 @@ export default class Circle extends Unit {
 				}
 			}
 			//Found best point configuration. Take away maxhealth of our rune based on our accuracy towards the bindpoint.
-			rune.attributes.maxHealth -= newRuneAccuracy;
-			rune.attributes.health -= newRuneAccuracy;
+			rune.attributes.maxHealth /= newRuneAccuracy;
+			rune.attributes.health /= newRuneAccuracy;
 			this.bindPointConfig = bestBindPointConfig.length;
 		}
+	}
+	polarToCartesian(angleInDegrees) {
+		let angleInRadians = (angleInDegrees - 90) * Math.PI / 180.0;
+		return new Point(
+			this.position.x + (this.radius * Math.cos(angleInRadians)),
+			this.position.y + (this.radius * Math.sin(angleInRadians))
+		);
+	}
+	getArcPath(startDeg, finishDeg) {
+		const start = this.polarToCartesian(finishDeg);
+		const end = this.polarToCartesian(startDeg);
+
+		const largeArcFlag = finishDeg - startDeg <= 180 ? "0" : "1";
+		const d = [
+		        "M", start.x, start.y,
+		        "A", this.radius, this.radius, 0, largeArcFlag, 0, end.x, end.y
+		    ].join(" ");
+
+		return d;
 	}
 	renderBinded() {
 		let renderString = '';
@@ -217,12 +244,14 @@ export default class Circle extends Unit {
 		let r = radius.toString();
 
 		let healthRatio = 1 - (this.attributes.health / this.attributes.maxHealth);
-		let strokeColor = "rgb(" + Math.round(healthRatio * 255).toString() + "," + Math.round(255 * (1 - healthRatio)).toString() + ",0)";
-
+		const swidth = devConfig.circleHealthStrokeWidth;
 		//perfectCircle is the perfect circle shown for clarity
 		//Circle formula for paths found here: http://stackoverflow.com/questions/5737975/circle-drawing-with-svgs-arc-path/10477334#10477334
-		let perfectCircle = "<path fill='none' stroke='" + strokeColor + "' strokewidth=3 d='M" + this.position.x + " " + this.position.y + "m" + (-1 * radius).toString() + " 0a" + r + "," + r + " 0 1,0 " + (radius * 2).toString() + ",0" + "a " + r + "," + r + " 0 1,0 " + (radius * -2).toString() + ",0" + "'></path>";
+		const deductRatio = 360 * (1 - (this.attributes.maxHealth / this.attributes.possibleHealth));
+		const deductedHealth = `<path fill='none' stroke='black' stroke-width='${swidth}' d='${this.getArcPath(0, deductRatio)}'></path>`;
+		const maxHealthCircle = `<path fill='none' stroke='red' stroke-width='${swidth}' d='${this.getArcPath(deductRatio, 360)}'></path>`;
+		const healthLeftCircle = `<path fill='none' stroke='green' stroke-width='${swidth}' d='${this.getArcPath(deductRatio + (healthRatio * (360-deductRatio)), 360)}'></path>`;
 		let realCircle = new Rune(this.points).render();
-		return [new RenderedElement(perfectCircle, "CircleTrue"), realCircle];
+		return [new RenderedElement(maxHealthCircle, "CircleTrue"), new RenderedElement(healthLeftCircle, "CircleTrue"), new RenderedElement(deductedHealth, "CircleTrue"), realCircle];
 	}
 }
