@@ -18,7 +18,6 @@ export default class Circle extends Unit {
 		this.setHealth();
 		this.deductHealth();
 		this.toSATPolygon();
-		//BUG: Sometimes crashes game, probably via infinite loop. (1/100 times)
 	}
 	setHealth() {
 		this.points.pop();
@@ -61,22 +60,25 @@ export default class Circle extends Unit {
 			hull.push(currentPoint);
 			//Using the gift-wrapping algorithm
 			let nextPoint;
-			if (currentPoint == this.points[0]) {
-				nextPoint = this.points[1];
-			} else {
-				nextPoint = this.points[0];
+			nextPoint = this.points[0];
+			while (nextPoint == currentPoint) { //Make sure the first point we use isn't the currentPoint o that we aren't stuck in infinite loop.
+				nextPoint = this.points[Math.round(Math.random() * this.points.length) - 1]
 			}
+			//BUG: This whole function might get stuck in an infinite loop. It has in the past, BUT hopefully the above while loop will fix it. If it pops up again look here.
 			for (let i = 0; i < this.points.length; i++) {
 				const orientation = ((nextPoint.x - currentPoint.x) * (this.points[i].y - currentPoint.y) - (nextPoint.y - currentPoint.y) * (this.points[i].x - currentPoint.x));
 				if (orientation > 0) { //We found a most that is to the left (more outer) than our nextPoint
 					nextPoint = this.points[i];
 				}
 			}
-			currentPoint = nextPoint;
-			if (currentPoint === undefined) {
+			if (currentPoint == nextPoint) {
+				//Shit, stuck in an infinite loop
+				alert("Oh shit, IT HAPPENED AGAIN");
 				break;
 			}
-		} while (currentPoint != firstPoint);
+			currentPoint = nextPoint;
+		}
+		while (currentPoint != firstPoint);
 		hull.push(firstPoint); //Finish the loop
 		this.points = hull;
 		this.position = coord.centroid(this.points);
@@ -225,9 +227,9 @@ export default class Circle extends Unit {
 
 		const largeArcFlag = finishDeg - startDeg <= 180 ? "0" : "1";
 		const d = [
-		        "M", start.x, start.y,
-		        "A", this.radius, this.radius, 0, largeArcFlag, 0, end.x, end.y
-		    ].join(" ");
+		"M", start.x, start.y,
+		"A", this.radius, this.radius, 0, largeArcFlag, 0, end.x, end.y
+	].join(" ");
 
 		return d;
 	}
@@ -245,8 +247,6 @@ export default class Circle extends Unit {
 
 		let healthRatio = 1 - (this.attributes.health / this.attributes.maxHealth);
 		const swidth = devConfig.circleHealthStrokeWidth;
-		//perfectCircle is the perfect circle shown for clarity
-		//Circle formula for paths found here: http://stackoverflow.com/questions/5737975/circle-drawing-with-svgs-arc-path/10477334#10477334
 		const deductRatio = 360 * (1 - (this.attributes.maxHealth / this.attributes.possibleHealth));
 		const deductedHealth = `<path fill='none' stroke='black' stroke-width='${swidth}' d='${this.getArcPath(0, deductRatio)}'></path>`;
 		const maxHealthCircle = `<path fill='none' stroke='red' stroke-width='${swidth}' d='${this.getArcPath(deductRatio, 360)}'></path>`;
