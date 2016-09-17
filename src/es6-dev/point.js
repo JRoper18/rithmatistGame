@@ -1,5 +1,5 @@
  	export default class Point {
- 		constructor(x, y, id) {
+ 		constructor(x, y, id = 1) {
  			this.x = x;
  			this.y = y;
  			this.id = id; // stroke ID to which this point belongs (1,2,...)

@@ -14,7 +14,7 @@ import SAT from './SAT.js';
 export default class GameState {
 	constructor(element, size) {
 			this.element = element;
-			this.contains = [new Testling(1, "red", new Point(300, 0)), new Circle([new Point(100, 0, 1), new Point(170, 39, 1), new Point(200, 100, 1), new Point(170, 170, 1), new Point(100, 200, 1), new Point(39, 170, 1), new Point(0, 100, 1), new Point(39, 39, 1), new Point(100, 0, 1)
+			this.contains = [new Circle([new Point(100, 0, 1), new Point(170, 39, 1), new Point(200, 100, 1), new Point(170, 170, 1), new Point(100, 200, 1), new Point(39, 170, 1), new Point(0, 100, 1), new Point(39, 39, 1), new Point(100, 0, 1)
     ], 2, "red")];
 			this.selected = [];
 			this.size = size;

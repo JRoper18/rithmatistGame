@@ -52,5 +52,8 @@ describe("Coord functions", function() {
 			expect(parallelIntersection).to.deep.equal(new Point(0, 0));
 		});
 	});
+	describe("Resample Points", function() {
+
+	})
 
 });

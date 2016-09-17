@@ -22,11 +22,10 @@ export default class PDollarRecognizer {
 	// The $P Point-Cloud Recognizer API begins here -- 3 methods: Recognize(), AddGesture(), DeleteUserGestures()
 	//
 	recognize(pointsInput) {
-		let points = pointsInput;
+		let points = JSON.parse(JSON.stringify(pointsInput));
 		points = coord.resample(points, NumPoints);
 		points = coord.scale(points);
 		points = coord.translateTo(points, Origin);
-
 		let b = +Infinity;
 		let u = -1;
 		for (let i = 0; i < this.pointClouds.length; i++) // for each point-cloud template
@@ -35,11 +34,16 @@ export default class PDollarRecognizer {
 			if (d < b) {
 				b = d; // best (least) distance
 				u = i; // point-cloud
+			} else if (d == b) {
+				console.log("HEY! Something messed up with the recognizer. ");
 			}
 		}
-		return (u == -1) ? new Result("No match.", 0.0) : new Result(this.pointClouds[u].name, Math.max((b - 2.0) / -2.0, 0.0));
+		const resultToReturn = (u == -1) ? new Result("No match.", 0.0) : new Result(this.pointClouds[u].name, Math.max((b - 2.0) / -2.0, 0.0));
+		console.log(resultToReturn);
+		return resultToReturn;
 	}
-	addGesture(name, points) {
+	addGesture(name, pointsInput) {
+		let points = JSON.parse(JSON.stringify(pointsInput));
 		this.pointClouds[this.pointClouds.length] = new PointCloud(name, points);
 		let num = 0;
 		for (let i = 0; i < this.pointClouds.length; i++) {

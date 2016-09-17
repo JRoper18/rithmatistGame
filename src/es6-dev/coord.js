@@ -94,29 +94,29 @@ function movePointAlongLine(pt1, pt2, distanceToMove, percent) {
 }
 
 function greedyCloudMatch(points, P) {
-	let e = 0.50;
-	let step = Math.floor(Math.pow(points.length, 1 - e));
-	let min = +Infinity;
-	for (let i = 0; i < points.length; i += step) {
-		let d1 = cloudDistance(points, P.points, i);
-		let d2 = cloudDistance(P.points, points, i);
+	var e = 0.50;
+	var step = Math.floor(Math.pow(points.length, 1 - e));
+	var min = +Infinity;
+	for (var i = 0; i < points.length; i += step) {
+		var d1 = cloudDistance(points, P.points, i);
+		var d2 = cloudDistance(P.points, points, i);
 		min = Math.min(min, Math.min(d1, d2)); // min3
 	}
 	return min;
 }
 
 function cloudDistance(pts1, pts2, start) {
-	let matched = new Array(pts1.length); // pts1.length == pts2.length
-	for (let k = 0; k < pts1.length; k++)
+	var matched = new Array(pts1.length); // pts1.length == pts2.length
+	for (var k = 0; k < pts1.length; k++)
 		matched[k] = false;
-	let sum = 0;
-	let i = start;
+	var sum = 0;
+	var i = start;
 	do {
-		let index = -1;
-		let min = +Infinity;
-		for (let j = 0; j < matched.length; j++) {
+		var index = -1;
+		var min = +Infinity;
+		for (var j = 0; j < matched.length; j++) {
 			if (!matched[j]) {
-				let d = distance(pts1[i], pts2[j]);
+				var d = distance(pts1[i], pts2[j]);
 				if (d < min) {
 					min = d;
 					index = j;
@@ -124,24 +124,28 @@ function cloudDistance(pts1, pts2, start) {
 			}
 		}
 		matched[index] = true;
-		let weight = 1 - ((i - start + pts1.length) % pts1.length) / pts1.length;
+		var weight = 1 - ((i - start + pts1.length) % pts1.length) / pts1.length;
 		sum += weight * min;
 		i = (i + 1) % pts1.length;
 	} while (i != start);
+	if (sum > 1) {
+		//FIXME: This algorithm made BY A COLLEGE CS MAJOR is wrong. Fuck them, I've got to figure it out myself.
+	}
 	return sum;
 }
 
-function resample(points, n) {
-	let I = pathLength(points) / (n - 1); // interval length
-	let D = 0.0;
-	let newpoints = new Array(points[0]);
-	for (let i = 1; i < points.length; i++) {
+function resample(pointsIn, n) {
+	var points = JSON.parse(JSON.stringify(pointsIn));
+	var I = pathLength(points) / (n - 1); // interval length
+	var D = 0.0;
+	var newpoints = new Array(new Point(points[0].x, points[0].y, points[0].id));
+	for (var i = 1; i < points.length; i++) {
 		if (points[i].id == points[i - 1].id) {
-			let d = distance(points[i - 1], points[i]);
+			var d = distance(points[i - 1], points[i]);
 			if ((D + d) >= I) {
-				let qx = points[i - 1].x + ((I - D) / d) * (points[i].x - points[i - 1].x);
-				let qy = points[i - 1].y + ((I - D) / d) * (points[i].y - points[i - 1].y);
-				let q = new Point(qx, qy, points[i].id);
+				var qx = points[i - 1].x + ((I - D) / d) * (points[i].x - points[i - 1].x);
+				var qy = points[i - 1].y + ((I - D) / d) * (points[i].y - points[i - 1].y);
+				var q = new Point(qx, qy, points[i].id);
 				newpoints[newpoints.length] = q; // append new point 'q'
 				points.splice(i, 0, q); // insert 'q' at position i in points s.t. 'q' will be the next i
 				D = 0.0;
@@ -154,42 +158,42 @@ function resample(points, n) {
 }
 
 function scale(points) {
-	let minX = +Infinity,
+	var minX = +Infinity,
 		maxX = -Infinity,
 		minY = +Infinity,
 		maxY = -Infinity;
-	for (let i = 0; i < points.length; i++) {
+	for (var i = 0; i < points.length; i++) {
 		minX = Math.min(minX, points[i].x);
 		minY = Math.min(minY, points[i].y);
 		maxX = Math.max(maxX, points[i].x);
 		maxY = Math.max(maxY, points[i].y);
 	}
-	let size = Math.max(maxX - minX, maxY - minY);
-	let newpoints = [];
-	for (let i = 0; i < points.length; i++) {
-		let qx = (points[i].x - minX) / size;
-		let qy = (points[i].y - minY) / size;
-		newpoints[newpoints.length] = new Point(qx, qy, points[i].id);
+	var size = Math.max(maxX - minX, maxY - minY);
+	var newpoints = [];
+	for (var j = 0; j < points.length; j++) {
+		var qx = (points[j].x - minX) / size;
+		var qy = (points[j].y - minY) / size;
+		newpoints[newpoints.length] = new Point(qx, qy, points[j].id);
 	}
 	return newpoints;
 }
 
 function translateTo(points, pt) // translates points' centroid
 {
-	let c = centroid(points);
-	let newpoints = [];
-	for (let i = 0; i < points.length; i++) {
-		let qx = points[i].x + pt.x - c.x;
-		let qy = points[i].y + pt.y - c.y;
+	var c = centroid(points);
+	var newpoints = [];
+	for (var i = 0; i < points.length; i++) {
+		var qx = points[i].x + pt.x - c.x;
+		var qy = points[i].y + pt.y - c.y;
 		newpoints[newpoints.length] = new Point(qx, qy, points[i].id);
 	}
 	return newpoints;
 }
 
 function centroid(points) {
-	let x = 0.0,
+	var x = 0.0,
 		y = 0.0;
-	for (let i = 0; i < points.length; i++) {
+	for (var i = 0; i < points.length; i++) {
 		x += points[i].x;
 		y += points[i].y;
 	}
@@ -200,16 +204,16 @@ function centroid(points) {
 
 function pathDistance(pts1, pts2) // average distance between corresponding points in two paths
 {
-	let d = 0.0;
-	for (let i = 0; i < pts1.length; i++) // assumes pts1.length == pts2.length
+	var d = 0.0;
+	for (var i = 0; i < pts1.length; i++) // assumes pts1.length == pts2.length
 		d += distance(pts1[i], pts2[i]);
 	return d / pts1.length;
 }
 
 function pathLength(points) // length traversed by a point path
 {
-	let d = 0.0;
-	for (let i = 1; i < points.length; i++) {
+	var d = 0.0;
+	for (var i = 1; i < points.length; i++) {
 		if (points[i].id == points[i - 1].id)
 			d += distance(points[i - 1], points[i]);
 	}
