@@ -38,8 +38,7 @@ export default class PDollarRecognizer {
 				console.log("HEY! Something messed up with the recognizer. ");
 			}
 		}
-		const resultToReturn = (u == -1) ? new Result("No match.", 0.0) : new Result(this.pointClouds[u].name, Math.max((b - 2.0) / -2.0, 0.0));
-		console.log(resultToReturn);
+		const resultToReturn = (u == -1) ? new Result("No match.", 0.0) : new Result(this.pointClouds[u].name, b);
 		return resultToReturn;
 	}
 	addGesture(name, pointsInput) {

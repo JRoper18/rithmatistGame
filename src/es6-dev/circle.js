@@ -141,104 +141,21 @@ export default class Circle extends Unit {
 			}
 			const recognizer = new PDollarRecognizer();
 			if (this.hasBinded.length <= 6) {
-				recognizer.addGesture("6", [new Point(300, 150), new Point(225, 280), new Point(75, 280), new Point(0, 150), new Point(75, 20), new Point(225, 20)]);
+				recognizer.addGesture("six", [new Point(300, 150), new Point(225, 280), new Point(75, 280), new Point(0, 150), new Point(75, 20), new Point(225, 20)]);
 			}
 			if (this.hasBinded.length <= 4) {
-				recognizer.addGesture("4", [new Point(2, 1), new Point(1, 2), new Point(0, 1), new Point(1, 0)]);
+				recognizer.addGesture("four", [new Point(2, 1), new Point(1, 2), new Point(0, 1), new Point(1, 0)]);
 			}
 			if (this.hasBinded.length <= 2) {
-				recognizer.addGesture("2", [new Point(2, 1), new Point(0, 1)]);
+				recognizer.addGesture("two", [new Point(2, 1), new Point(0, 1)]);
 			}
-			recognizer.recognize(pointsOffsetCoord);
+			let bestConfigAccuracy = recognizer.recognize(pointsOffsetCoord).score / 2;
+			if (bestConfigAccuracy < 1) {
+				bestConfigAccuracy++;
+			}
+			rune.attributes.health /= bestConfigAccuracy;
+			rune.attributes.maxHealth /= bestConfigAccuracy;
 		}
-		/*
-		if (this.bindPointsCoord.length > 1) {
-			const possibleBindPoints = [
-				[0, 180], //Two point
-				[0, 90, 180, -90], //Four point
-				[0, 60, 120, 180, -120, -60], //Six Point
-				//Nine-point circle guessed based on this image: https://upload.wikimedia.org/wikipedia/commons/thumb/7/71/Nine-point_circle.svg/2000px-Nine-point_circle.svg.png\
-				//TODO: Calculate points for 9 point circle rather than guesstimate
-				[0, 60, 100, 165, 180, 225, 235, 245, 335]
-			];
-			let availibleBindPoints = JSON.parse(JSON.stringify(possibleBindPoints));
-			const errorGiven = devConfig.bindPointErrorGiven;
-
-			if (this.hasBinded.length !== 1) { //Nothing has been binded yet, so let this be the first point.
-				//We need to eliminate possible bind point configurations.
-				if (this.hasBinded.length > 3) {
-					delete availibleBindPoints['2'];
-				}
-				if (this.hasBinded.length > 5) {
-					delete availibleBindPoints['4'];
-				}
-				if (this.hasBinded.length > 7) {
-					delete availibleBindPoints['6'];
-				}
-				//We need to rotate our circle to make the first point 0.
-				let rotatedPoints = [];
-				for (let i = 0; i < this.bindPointsDegrees.length; i++) {
-					const rotatedPoint = this.bindPointsDegrees[i] - offset;
-					if (Math.abs(rotatedPoint - 90) < errorGiven || Math.abs(rotatedPoint + 90) < errorGiven) { //Telltale way to check if we're dealing with 4 point circle is to see if we have a 90 degree turn somewhere
-						delete availibleBindPoints['2'];
-						delete availibleBindPoints['6'];
-						delete availibleBindPoints['9'];
-					} else if (Math.abs(rotatedPoint - 60) < errorGiven) {
-						delete availibleBindPoints['2'];
-						delete availibleBindPoints['4'];
-					} else if (Math.abs(rotatedPoint + 60) < errorGiven || Math.abs(rotatedPoint - 120) < errorGiven) {
-						delete availibleBindPoints['2'];
-						delete availibleBindPoints['4'];
-						delete availibleBindPoints['9'];
-					}
-					rotatedPoints.push(rotatedPoint);
-				}
-				//We now have the possible bind point configuration
-				let bestBindPointConfigError = Infinity;
-				let bestBindPointConfig;
-				let currentBindPoints = rotatedPoints;
-				let newRuneAccuracy;
-				for (let bindPointConfigId in availibleBindPoints) {
-					if (possibleBindPoints.hasOwnProperty(bindPointConfigId)) { //FIXME: Right now, the bind points are checked in a way such that if we have points that match, but then another point might match better, it won't find out.
-						let bindPointConfig = availibleBindPoints[bindPointConfigId];
-						let bindPointConfigError = 0;
-						let newRuneAccuracyForThisConfig;
-						//Calculate the strength of our current bind point configuration
-						for (let i = 0; i < currentBindPoints.length; i++) {
-							let closestBindPointError = Infinity;
-							let closestBindPoint;
-							for (let bindPointId in bindPointConfig) {
-								let bindPoint = bindPointConfig[bindPointId];
-								let tempBindPointError = Math.abs(bindPoint - currentBindPoints[i]);
-								if (tempBindPointError < closestBindPointError) {
-									closestBindPoint = bindPoint;
-									closestBindPointError = tempBindPointError;
-
-								}
-							}
-							//We found the closest one, dont let multiple points be assigned to the same bindpoint. If we're checking the last (new) bindpoint, save it for later.
-							if (i == currentBindPoints.length - 1) {
-								newRuneAccuracyForThisConfig = closestBindPointError;
-							}
-							bindPointConfig.splice(bindPointConfig.indexOf(closestBindPoint), 1);
-							bindPointConfigError += closestBindPointError;
-						}
-						if (bindPointConfigError < bestBindPointConfigError || (bindPointConfigError == bestBindPointConfigError && possibleBindPoints[bindPointConfigId].length < bestBindPointConfig.length)) {
-							bestBindPointConfig = possibleBindPoints[bindPointConfigId];
-							bestBindPointConfigError = bindPointConfigError;
-							newRuneAccuracy = newRuneAccuracyForThisConfig;
-						}
-					}
-				}
-		//Found best point configuration. Take away maxhealth of our rune based on our accuracy towards the bindpoint.
-		rune.attributes.maxHealth /= newRuneAccuracy;
-		rune.attributes.health /= newRuneAccuracy;
-		this.bindPointConfig = bestBindPointConfig.length;
-	}
-	debugger;
-}
-*/
-
 	}
 	getDegreePoint(angleInDegrees) {
 		let angleInRadians = (angleInDegrees - 90) * Math.PI / 180.0;

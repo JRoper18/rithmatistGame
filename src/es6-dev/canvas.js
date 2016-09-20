@@ -69,7 +69,7 @@ export default class Canvas {
 			} else if (type == "mouseup") {
 				let recognizedResult = this.recognizer.recognize(this.currentRune.points);
 				//WARNING Recognize adds 99-98 more randon points to a point array, which is why I made a clone of of the points and then recognized the clone.
-				if (recognizedResult.score > 0.1) { //If they just drew something
+				if (recognizedResult.score < 5) { //If they just drew something
 					this.gameState.newRune(recognizedResult.name, this.currentRune.points, "blue");
 					this.currentRune = new Rune([]);
 				}

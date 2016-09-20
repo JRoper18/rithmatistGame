@@ -105,7 +105,7 @@ function greedyCloudMatch(points, P) {
 	return min;
 }
 
-function cloudDistance(pts1, pts2, start) {
+function cloudDistance(pts1, pts2, start = 0) {
 	var matched = new Array(pts1.length); // pts1.length == pts2.length
 	for (var k = 0; k < pts1.length; k++)
 		matched[k] = false;
@@ -128,9 +128,6 @@ function cloudDistance(pts1, pts2, start) {
 		sum += weight * min;
 		i = (i + 1) % pts1.length;
 	} while (i != start);
-	if (sum > 1) {
-		//FIXME: This algorithm made BY A COLLEGE CS MAJOR is wrong. Fuck them, I've got to figure it out myself.
-	}
 	return sum;
 }
 
