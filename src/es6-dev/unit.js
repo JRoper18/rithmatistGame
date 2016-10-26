@@ -22,7 +22,7 @@ export default class Unit {
 		return false;
 	}
 	hasTag(tag) {
-			for (let i = 0; i < this.attributes.tags; i++) {
+			for (let i = 0; i < this.attributes.tags.length; i++) {
 				if (this.attributes.tags[i] == tag) {
 					return true;
 				}
@@ -34,5 +34,6 @@ export default class Unit {
 		  Hidden
 		  Mobile
 		  Destructible
+			Root
 		*/
 }

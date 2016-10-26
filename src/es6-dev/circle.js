@@ -6,10 +6,15 @@ import RenderedElement from './renderedElement.js';
 import Rune from './rune.js';
 import SAT from './SAT.js';
 export default class Circle extends Unit {
-	constructor(points, id, player) {
+	constructor(points, id, player, root = false) {
 		//Close the circle
 		let position = coord.centroid(points);
-		super("Circle", id, player, position, {});
+		let rootObj = (root)? {
+			"tags": [
+				"root"
+			]
+		} : {};
+		super("Circle", id, player, position, rootObj);
 		this.points = points;
 		this.hasBinded = [];
 		this.bindPointsCoord = [];

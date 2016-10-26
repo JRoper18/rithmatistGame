@@ -15,12 +15,11 @@ export default class GameState {
 	constructor(element, size) {
 			this.element = element;
 			this.contains = [new Circle([new Point(100, 0, 1), new Point(170, 39, 1), new Point(200, 100, 1), new Point(170, 170, 1), new Point(100, 200, 1), new Point(39, 170, 1), new Point(0, 100, 1), new Point(39, 39, 1), new Point(100, 0, 1)
-    ], 2, "red")];
+    ], 2, "red", true)];
 			this.selected = [];
 			this.size = size;
 			this.contains[0].moveTo(new Point(300, 300));
 			this.idGenerator = this.getId();
-
 		} *
 		getId() {
 			let index = 3;
@@ -211,6 +210,7 @@ export default class GameState {
 		for (let j = 0; j < this.contains.length; j++) {
 			if (this.contains[j].constructor.name == runeType) {
 				if (this.contains[j].attributes.health <= 0) {
+					if(this.contains[j].player == playerData)
 					this.contains.splice(j, 1);
 				}
 			}
