@@ -31,7 +31,10 @@ export default class GameState {
 	}
 	generateNavMesh(){
 		const unit = devConfig.collisionGridUnitSize;
-		let matrix = new Array(Math.ceil(this.size.y/unit)).fill(new Array(Math.ceil(this.size.x/unit)).fill(0));
+		let matrix = new Array(Math.ceil(this.size.y/unit));
+		for(let i = 0; i<matrix.length; i++){
+			matrix[i] = new Array(Math.ceil(this.size.x/unit)).fill(0);
+		}
 		for(let i = 0; i<this.contains.length; i++){
 			this.contains[i].generateNavMesh(matrix);
 		}
@@ -329,10 +332,10 @@ export default class GameState {
 					let xRender = i*unit;
 					let yRender = j*unit;
 					if(!this.navMesh.isWalkableAt(i, j)){
-						renderString += '<rect x="' + xRender + '" y="' + yRender + '" width="30" height="30" stroke="red" fill="none"/>';
+						renderString += `<rect x="${xRender}" y="${yRender}" width="${unit}" height="${unit}" stroke="red" fill="red"  fill-opacity="0.5"/>`;
 					}
 					else{
-						renderString += '<rect x="' + xRender + '" y="' + yRender + '" width="30" height="30" stroke="green" fill="none"/>';
+						renderString += `<rect x="${xRender}" y="${yRender}" width="${unit}" height="${unit}" stroke="green" fill="none"/>`;
 					}
 				}
 			}
