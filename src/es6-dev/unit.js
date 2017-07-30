@@ -31,9 +31,16 @@ export default class Unit {
 		}
 		/*
 		Possible Tags include:
-		  Hidden
-		  Mobile
-		  Destructible
-			Root
+		  	Hidden -- Other units can't target it
+		  	Mobile -- Can change position
+		  	Destructible -- It has health and can be destroyed
+			Root -- It's a root circle
+			Walkthrough -- It doesn't have any collision detection
 		*/
+	render(){ //Returns an array of RenderedElements with corresponding render orders
+		throw new Error("render is an abstract method from the Unit class which isn't implemented by a subclass.");
+	}
+	getCollisionGrid(){ //Returns a 2D array of 
+		throw new Error("getCollisionGrid is an abstract method from the Unit class which isn't implemented by a subclass.");
+	}
 }

@@ -20,13 +20,23 @@ export default class GameState {
 			this.size = size;
 			this.contains[0].moveTo(new Point(300, 300));
 			this.idGenerator = this.getId();
-		} *
-		getId() {
-			let index = 3;
-			while (true) {
-				yield index++;
-			}
+			this.navMesh = this.generateNavMesh();
+			this.pathfinder = new PF.AStarFinder();
+	} *
+	getId() {
+		let index = 3;
+		while (true) {
+			yield index++;
 		}
+	}
+	generateNavMesh(){
+		const unit = devConfig.collisionGridUnitSize;
+		let matrix = new Array(Math.ceil(this.size.y/unit)).fill(new Array(Math.ceil(this.size.x/unit)).fill(0));
+		for(let i = 0; i<this.contains.length; i++){
+			this.contains[i].generateNavMesh(matrix);
+		}
+		return new PF.Grid(matrix);
+	}
 	getCircles() {
 		let circles = [];
 		this.getBinded((rune) => {
@@ -82,7 +92,6 @@ export default class GameState {
 				//TODO:0 Check the first, last, and middle lines to circle bind points and then bind them.
 				break;
 			default:
-
 		}
 	}
 	moveSelectedAlongPath(path) {
@@ -155,7 +164,8 @@ export default class GameState {
 			console.log("Collision");
 			chalkling.position.x -= (response.overlapV.x);
 			chalkling.position.y -= (response.overlapV.y);
-			chalkling.position = coord.movePointAlongLine(chalkling.position, circle.position, -1 * BOUNCE); //Fallback if we ever get a collision of 0 (we usually do, our library is faulty)
+			chalkling.position = coord.movePointAlongLine(chalkling.position, circle.position, -1); //Fallback if we ever get a collision of 0 (we usually do, our library is faulty)
+			chalkling.path.unshift(coord.movePointAlongLine(chalkling.position, circle.position, -1 * BOUNCE));
 			chalkling.override();
 		}
 		response.clear();
@@ -266,6 +276,9 @@ export default class GameState {
 		}
 		return selectedArray;
 	}
+	updateChalklingPaths(){
+
+	}
 	update(time) {
 		this.removeDeadChalklings();
 		this.updateHitboxes();
@@ -309,6 +322,19 @@ export default class GameState {
 		for (let i = 0; i < renderedElements.length; i++) {
 			renderString += renderedElements[i].renderString;
 		}
+		if(devConfig.showCollisionGrid){
+			for(let i = 0; i<this.size.x/30; i++){
+				for(let j = 0; j<this.size.y/30; j++){
+					if(!this.navMesh.isWalkableAt(i, j)){
+						let xRender = i*30;
+						let yRender = j*30;
+						renderString += '<rect x="' + xRender + '" y="' + yRender + '" width="30" height="30"';
+						//renderString += `<rect x="${i*30}" y="${j*30}" width="30" height="30"/>` 
+					}
+				}
+			}
+		}
+		debugger;
 		return renderString;
 	}
 }

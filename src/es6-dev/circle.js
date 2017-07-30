@@ -182,6 +182,38 @@ export default class Circle extends Unit {
 
 		return d;
 	}
+	/**
+	 * Updates the given grid with walkable positions of this circle
+	 * @param  {PF.Grid} currentGrid The navmesh to be updated
+	 * @return {void}             
+	 */
+	generateNavMesh(currentGrid){
+		for(let i = 0; i<this.points.length; i++){ //Color in all lines around the circle
+			const p1 = this.points[i];
+			let p2;
+			if(i == this.points.length-1){
+				p2 = this.points[0];
+			}
+			else{
+				p2 = this.points[i+1];
+			}
+			const dx = p2.x - p1.x;
+			const dy = p2.y - p1.y;
+			const steps = (Math.abs(dy/dx) > 1)? Math.abs(dy) : Math.abs(dx)
+			//If the slope is greater than one, we need to check every y coord from y1 to y2. 
+			//If the slope is less than one, we check every x values from x1 to x2.
+			const unit = devConfig.collisionGridUnitSize;
+			const xIncrement = unit * (dx/steps);
+			const yIncrement = unit * (dy/steps); 
+			let tempX = p1.x;
+			let tempY = p1.y;
+			for(let j = 0; j<steps/unit; j++){
+				tempX += xIncrement;
+				tempY += yIncrement;
+				currentGrid[Math.floor(tempX/unit)][Math.floor(tempY/unit)] = 1;
+			}
+		}
+	}
 	renderBinded() {
 		let renderString = '';
 		let binded = getBinded(this);

@@ -11,7 +11,7 @@
     <script>
       //Global variable
       var devConfig = {
-        "renderOrder" : {
+        "renderOrder" : { //In which order things render. Lower numbers are rendered first. 
           "CirclePoints" : 1,
           "CircleTrue" : 0,
           "ChalklingImage" : 3,
@@ -21,12 +21,15 @@
           "Rune" : 0,
           "PatternDefs" : 10
         },
-        "chalklingCollisionBounce": 10,
-        "bindPointErrorGiven": 10,
-        "circleHealthStrokeWidth" : 8
+        "chalklingCollisionBounce": 3, //When a chalkling collides with something, how far it bounces back
+        "bindPointErrorGiven": 10, //The maximum error (in degrees) considered when deciding whether a circle fits a bind point
+        "circleHealthStrokeWidth" : 8, //I forgot
+        "showCollisionGrid": true, //Show the collision grid (a grid of which blocks of the screen are collidable)
+        "collisionGridUnitSize": 30 //How many pixels a side of a unit of the collision grid takes up.
       }
     </script>
     <script src="./polyfill.min.js"></script>
+    <script src="./pathfinding.min.js"></script>
     <script src="./jquery-3.0.0.min.js"></script>
     <script src="./bundle.js"></script>
     <div oncontextmenu="return false;" id="content" style="width:100vw;height:100vh;"></div>

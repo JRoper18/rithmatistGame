@@ -45,7 +45,7 @@ export default class Chalkling extends Unit {
 				pathToAnimation = './chalklings/' + this.name + '/Animations/Idle/' + this.frame + ".png";
 		}
 		return pathToAnimation;
-	}
+	};
 	moveTo(position) {
 		this.target = null;
 		this.currentAction = "WALK";
@@ -157,6 +157,9 @@ export default class Chalkling extends Unit {
 				this.path = [this.target.position];
 			}
 		}
+	}
+	getCollisionGrid(){
+
 	}
 	render() {
 		//The way we render only a section of the spritesheet is to embed it in another svg and set the viewbox.
