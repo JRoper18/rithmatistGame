@@ -210,6 +210,7 @@ export default class Circle extends Unit {
 			for(let j = 0; j<steps/unit; j++){
 				tempX += xIncrement;
 				tempY += yIncrement;
+				console.log()
 				currentGrid[Math.floor(tempX/unit)][Math.floor(tempY/unit)] = 1;
 			}
 		}

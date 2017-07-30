@@ -323,18 +323,20 @@ export default class GameState {
 			renderString += renderedElements[i].renderString;
 		}
 		if(devConfig.showCollisionGrid){
-			for(let i = 0; i<this.size.x/30; i++){
-				for(let j = 0; j<this.size.y/30; j++){
+			const unit = devConfig.collisionGridUnitSize;
+			for(let i = 0; i<this.size.x/unit; i++){
+				for(let j = 0; j<this.size.y/unit; j++){
+					let xRender = i*unit;
+					let yRender = j*unit;
 					if(!this.navMesh.isWalkableAt(i, j)){
-						let xRender = i*30;
-						let yRender = j*30;
-						renderString += '<rect x="' + xRender + '" y="' + yRender + '" width="30" height="30"';
-						//renderString += `<rect x="${i*30}" y="${j*30}" width="30" height="30"/>` 
+						renderString += '<rect x="' + xRender + '" y="' + yRender + '" width="30" height="30" stroke="red" fill="none"/>';
+					}
+					else{
+						renderString += '<rect x="' + xRender + '" y="' + yRender + '" width="30" height="30" stroke="green" fill="none"/>';
 					}
 				}
 			}
 		}
-		debugger;
 		return renderString;
 	}
 }
