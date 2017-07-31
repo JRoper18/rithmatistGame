@@ -30,6 +30,7 @@ function gameLoop(timeStamp) {
 	lastFrameTime = timeStamp;
 	update(changeInTime);
 	render();
+	console.log(changeInTime);
 	requestAnimationFrame(gameLoop);
 }
 
