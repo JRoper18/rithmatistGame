@@ -227,7 +227,7 @@ export default class Circle extends Unit {
 	render() {
 		let radius = this.radius;
 		let r = radius.toString();
-
+		
 		let healthRatio = 1 - (this.attributes.health / this.attributes.maxHealth);
 		const swidth = devConfig.circleHealthStrokeWidth;
 		const deductRatio = 360 * (1 - (this.attributes.maxHealth / this.attributes.possibleHealth));

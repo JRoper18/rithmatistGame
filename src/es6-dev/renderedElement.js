@@ -1,6 +1,6 @@
 export default class RenderedElement {
-	constructor(renderString, type = "Rune") {
+	constructor(displayObj, type = "Rune") {
 		this.type = type;
-		this.renderString = renderString;
+		this.displayObj = displayObj;
 	}
 }

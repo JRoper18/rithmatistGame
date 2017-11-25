@@ -39,8 +39,7 @@ function update(time) {
 }
 
 function render() {
-	var svgElements = "<svg width='100%' height='100%'>" + b.render() + c.render() + m.render() + "</svg>";
-	document.getElementById(b.element).innerHTML = (svgElements);
+	b.render();
 }
 
 // http://paulirish.com/2011/requestanimationframe-for-smart-animating/

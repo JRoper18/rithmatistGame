@@ -22,6 +22,7 @@ export default class GameState {
 			this.idGenerator = this.getId();
 			this.navMesh = this.generateNavMesh();
 			this.pathfinder = new PF.AStarFinder();
+			this.setup();
 	} *
 	getId() {
 		let index = 3;
@@ -294,8 +295,17 @@ export default class GameState {
 			}
 		});
 	}
+	setup(){
+		this.renderer = PIXI.autoDetectRenderer(1000, 500);
+		document.body.appendChild(this.renderer.view);
+		this.stage = new PIXI.Container();
+	}
 	render() {
-		let renderedElements = [];
+		//Clear last frame
+		this.stage.removeChildren();		
+		
+		//Add these back in once I get inidividual rendering sorted out. 
+		/*
 		let allRunes = this.getBinded();
 		allRunes = allRunes.concat(this.renderSelected());
 		for (let rune of allRunes) {
@@ -321,25 +331,10 @@ export default class GameState {
 				}
 			}
 		}
-		let renderString = '';
-		for (let i = 0; i < renderedElements.length; i++) {
-			renderString += renderedElements[i].renderString;
+		*/
+		for(let element of renderedElements){
+			this.stage.addChild(element.displayObj);
 		}
-		if(devConfig.showCollisionGrid){
-			const unit = devConfig.collisionGridUnitSize;
-			for(let i = 0; i<this.size.x/unit; i++){
-				for(let j = 0; j<this.size.y/unit; j++){
-					let xRender = i*unit;
-					let yRender = j*unit;
-					if(!this.navMesh.isWalkableAt(i, j)){
-						renderString += `<rect x="${xRender}" y="${yRender}" width="${unit}" height="${unit}" stroke="red" fill="red"  fill-opacity="0.5"/>`;
-					}
-					else{
-						renderString += `<rect x="${xRender}" y="${yRender}" width="${unit}" height="${unit}" stroke="green" fill="none"/>`;
-					}
-				}
-			}
-		}
-		return renderString;
+		this.renderer.render(this.stage);
 	}
 }
