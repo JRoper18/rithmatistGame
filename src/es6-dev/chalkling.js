@@ -167,15 +167,21 @@ export default class Chalkling extends Unit {
 		if (this.currentAction == "DEATH") {
 			return [];
 		}
+		let texture = PIXI.loader.resources[this.getAnimation()].texture;
 		const totalWidth = this.attributes.animationData[this.currentAction].size.x;
 		const frameWidth = (totalWidth / this.attributes.animationData[this.currentAction].frames);
 		const frameHeight = this.attributes.animationData[this.currentAction].size.y;
-		const viewBox = (frameWidth * this.frame).toString() + " 0 " + frameWidth.toString() + " " + frameHeight.toString();
-		const chalklingImage = "<svg x=\"" + this.topLeft.x + "\" y=\"" + this.topLeft.y + "\" width=\"100px\" height=\"100px\" viewBox=\"" + viewBox + "\">" + "<image x=\"0px\" y=\"0px\" width=\"" + totalWidth.toString() + "\" height=\"" + frameHeight + "\" xlink:href=\"" + this.getAnimation() + "\"" + "/></svg>";
+		let viewBox = new PIXI.Rectangle((frameWidth * this.frame), 0, frameWidth, frameHeight);
+		texture.frame = viewBox;
+		let spriteGraphics = new PIXI.Sprite(texture);
+		spriteGraphics.x = this.topLeft.x;
+		spriteGraphics.y = this.topLeft.y;
+		spriteGraphics.width = 100;
+		spriteGraphics.height = 100;
 		const healthBarOutside = '<rect x="' + (this.topLeft.x).toString() + '" y="' + (this.topLeft.y + 110).toString() + '" width="100" height="5" fill="green"/>';
 		const healthRatio = Math.max(0, (((this.attributes.maxHealth - this.attributes.health) / this.attributes.maxHealth) * 100));
 		const healthBarLeft = '<rect x="' + ((this.topLeft.x) + (100 - healthRatio)).toString() + '" y="' + (this.topLeft.y + 110).toString() + '" width="' + healthRatio.toString() + '" height="5" fill="red"/>';
 		const healthBarTotal = healthBarOutside + healthBarLeft;
-		return [new RenderedElement(chalklingImage, "ChalklingImage"), new RenderedElement(healthBarTotal, "ChalklingHealth")];
+		return [new RenderedElement(spriteGraphics, "ChalklingImage")];
 	}
 }

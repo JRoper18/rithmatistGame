@@ -3,6 +3,7 @@ import Canvas from './es6-dev/canvas.js';
 import GameState from './es6-dev/gameState.js';
 import Circle from './es6-dev/circle.js';
 import Minimap from './es6-dev/minimap.js';
+import Renderer from './es6-dev/renderer.js';
 import {
 	getUserRunes
 } from './es6-dev/runeData.js';
@@ -10,7 +11,8 @@ let b, c, m;
 let lastFrameTime = 0;
 
 window.onload = function() {
-	b = new GameState('content', {
+	window.renderer = new Renderer("test");
+	b = new GameState({
 		"x": 720,
 		"y": 1000
 	});
@@ -22,15 +24,16 @@ window.onload = function() {
 		"x": 100,
 		"y": 100
 	}, b);
-	requestAnimationFrame(gameLoop);
+	renderer.setup(start);
 };
-
+function start(){
+	requestAnimationFrame(gameLoop);
+}
 function gameLoop(timeStamp) {
 	let changeInTime = (timeStamp - lastFrameTime);
 	lastFrameTime = timeStamp;
 	update(changeInTime);
 	render();
-	console.log(changeInTime);
 	requestAnimationFrame(gameLoop);
 }
 
@@ -39,7 +42,8 @@ function update(time) {
 }
 
 function render() {
-	b.render();
+	renderer.addToRenderQueue(b.render());
+	renderer.render();
 }
 
 // http://paulirish.com/2011/requestanimationframe-for-smart-animating/

@@ -19,34 +19,29 @@ export default class Rune { //A Rune is a non-animated (static) set of points
 		}
 	}
 	render(mode = "FILL") {
-		let currentStroke = -1;
-		let svgPathString = '';
-		for (let i = 0; i < this.points.length; i++) {
-			if (this.points[i].id != currentStroke) { //If there is a new stroke
-				currentStroke = this.points[i].id;
-				svgPathString += ("M" + this.points[i].x + " " + this.points[i].y);
-			} else {
-				svgPathString += ("L" + this.points[i].x + " " + this.points[i].y);
-			}
+		if(this.points.length == 0){
+			return [];
 		}
 		let graphics = new PIXI.Graphics();
 		switch (mode) {
 			case "FILL":
-				graphics.lineStyle(1, 0x99CCFF, 1);
-				graphics.beginFill(0xffFF00, 0.5);
+				graphics.lineStyle(1, 0x000000, 1);
+				graphics.beginFill(0xffFF00, 0);
 				this.makePolygon(graphics);
 				graphics.endFill();
-				graphics.x = 0;
-				graphics.y = 0;
-				return new RenderedElement(graphics, "Rune");
-				return new RenderedElement('<path stroke="black" fill="none" stroke-width = "1" d="' + svgPathString + '"></path>', "Rune");
 			case "DASH":
-				return new RenderedElement('<path stroke="black" stroke-dasharray= "5,5" fill="none" stroke-width = "1" d="' + svgPathString + '"></path>', "Rune");
+				graphics.lineStyle(1, 0x000000, 1);
+				graphics.beginFill(0xffFF00, 0);
+				this.makePolygon(graphics);
+				graphics.endFill();
 			case "FADE":
-				return new RenderedElement('<path stroke="grey" fill="none" stroke-width = "1" d="' + svgPathString + '"></path>', "Rune");
-			default:
-				return new RenderedElement('<path stroke="black" fill="none" stroke-width = "1" d="' + svgPathString + '"></path>', "Rune");
-
+				graphics.lineStyle(1, 0x808080, 1);
+				graphics.beginFill(0xffFF00, 0);
+				this.makePolygon(graphics);
+				graphics.endFill();	
 		}
+		graphics.x = 0;
+		graphics.y = 0;
+		return [new RenderedElement(graphics, "Rune")];
 	}
 }

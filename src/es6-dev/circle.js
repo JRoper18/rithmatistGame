@@ -170,17 +170,11 @@ export default class Circle extends Unit {
 			1
 		);
 	}
-	getArcPath(startDeg, finishDeg) {
-		const start = this.getDegreePoint(finishDeg);
-		const end = this.getDegreePoint(startDeg);
-
-		const largeArcFlag = finishDeg - startDeg <= 180 ? "0" : "1";
-		const d = [
-		"M", start.x, start.y,
-		"A", this.radius, this.radius, 0, largeArcFlag, 0, end.x, end.y
-	].join(" ");
-
-		return d;
+	makeArcGraphic(startRad, endRad, color) {
+		let graphic = new PIXI.Graphics();	
+		graphic.lineStyle(devConfig.circleHealthStrokeWidth, color);
+		graphic.arc(this.position.x, this.position.y, this.radius, startRad, endRad);
+		return graphic;
 	}
 	/**
 	 * Updates the given grid with walkable positions of this circle
@@ -230,11 +224,8 @@ export default class Circle extends Unit {
 		
 		let healthRatio = 1 - (this.attributes.health / this.attributes.maxHealth);
 		const swidth = devConfig.circleHealthStrokeWidth;
-		const deductRatio = 360 * (1 - (this.attributes.maxHealth / this.attributes.possibleHealth));
-		const deductedHealth = `<path fill='none' stroke='black' stroke-width='${swidth}' d='${this.getArcPath(0, deductRatio)}'></path>`;
-		const maxHealthCircle = `<path fill='none' stroke='red' stroke-width='${swidth}' d='${this.getArcPath(deductRatio, 360)}'></path>`;
-		const healthLeftCircle = `<path fill='none' stroke='green' stroke-width='${swidth}' d='${this.getArcPath(deductRatio + (healthRatio * (360-deductRatio)), 360)}'></path>`;
+		const deductRatio = 2 * Math.PI * (1 - (this.attributes.maxHealth / this.attributes.possibleHealth));
 		let realCircle = new Rune(this.points).render();
-		return [new RenderedElement(maxHealthCircle, "CircleTrue"), new RenderedElement(healthLeftCircle, "CircleTrue"), new RenderedElement(deductedHealth, "CircleTrue"), realCircle];
+		return [new RenderedElement(this.makeArcGraphic(0, deductRatio, 0xffffff), "CircleTrue"), new RenderedElement(this.makeArcGraphic(deductRatio, 6.28, 0xff0000), "CircleTrue"), new RenderedElement(this.makeArcGraphic(deductRatio + healthRatio * (6.28-deductRatio), 6.28, 0x00ff00), "CircleTrue"), realCircle[0]];
 	}
 }

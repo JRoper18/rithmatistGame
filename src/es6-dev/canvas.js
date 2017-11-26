@@ -10,14 +10,12 @@ import * as coord from './coord.js';
 
 export default class Canvas {
 	constructor(board, runes) {
-		this.gameState = board;
 		this.runes = runes;
 		this.mode = "COMMAND";
 		this.currentRune = new Rune([]);
 		this.strokeId = 0;
 		this.recognizer = new PDollarRecognizer();
 		this.enable();
-
 	}
 	changeMode(mode) {
 		this.currentRune = new Rune([]);
@@ -25,7 +23,7 @@ export default class Canvas {
 	}
 	enable() {
 		getUserRunes(this.recognizer, this.runes);
-		let DOM = '#' + this.gameState.element;
+		let DOM = '#' + window.renderer.element;
 		$(document).on("keydown", (key) => {
 			if (key.which == 90) { //If "z" key held down
 				//Clear Points
@@ -108,7 +106,7 @@ export default class Canvas {
 		}
 	}
 	getMousePosition(passedEvent) {
-		let parentOffset = $("#" + this.gameState.element).offset();
+		let parentOffset = $("#" + window.renderer.element).offset();
 		//Offset allows for containers that don't fit thte entirepage and work inside the surface.
 		let relX = passedEvent.pageX - parentOffset.left;
 		let relY = passedEvent.pageY - parentOffset.top;
@@ -129,6 +127,6 @@ export default class Canvas {
 			default:
 				path = this.currentRune.render();
 		}
-		return path.renderString;
+		return path;
 	}
 }

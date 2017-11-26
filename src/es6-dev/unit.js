@@ -21,6 +21,9 @@ export default class Unit {
 		}
 		return false;
 	}
+	generateNavMesh(currentGrid){
+		return;
+	}
 	hasTag(tag) {
 			for (let i = 0; i < this.attributes.tags.length; i++) {
 				if (this.attributes.tags[i] == tag) {

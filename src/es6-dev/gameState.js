@@ -12,17 +12,17 @@ import SelectedOverlay from './selectedOverlay.js';
 import SAT from './SAT.js';
 
 export default class GameState {
-	constructor(element, size) {
-			this.element = element;
+	constructor(size) {
 			this.contains = [new Circle([new Point(100, 0, 1), new Point(170, 39, 1), new Point(200, 100, 1), new Point(170, 170, 1), new Point(100, 200, 1), new Point(39, 170, 1), new Point(0, 100, 1), new Point(39, 39, 1), new Point(100, 0, 1)
     ], 2, "red", true)];
+			this.contains.push(new Testling(2, "red", new Point(500, 200)));
+			this.contains[0].attributes.health = 20;
 			this.selected = [];
 			this.size = size;
 			this.contains[0].moveTo(new Point(300, 300));
 			this.idGenerator = this.getId();
 			this.navMesh = this.generateNavMesh();
 			this.pathfinder = new PF.AStarFinder();
-			this.setup();
 	} *
 	getId() {
 		let index = 3;
@@ -165,7 +165,6 @@ export default class GameState {
 		const BOUNCE = devConfig.chalklingCollisionBounce;
 		let chalklingBox = new SAT.Box(new SAT.Vector(chalkling.topLeft.x, chalkling.topLeft.y), 100, 100).toPolygon();
 		if (SAT.testPolygonPolygon(chalklingBox, currentlyTestedPolygon, response)) {
-			console.log("Collision");
 			chalkling.position.x -= (response.overlapV.x);
 			chalkling.position.y -= (response.overlapV.y);
 			chalkling.position = coord.movePointAlongLine(chalkling.position, circle.position, -1); //Fallback if we ever get a collision of 0 (we usually do, our library is faulty)
@@ -295,46 +294,14 @@ export default class GameState {
 			}
 		});
 	}
-	setup(){
-		this.renderer = PIXI.autoDetectRenderer(1000, 500);
-		document.body.appendChild(this.renderer.view);
-		this.stage = new PIXI.Container();
-	}
 	render() {
-		//Clear last frame
-		this.stage.removeChildren();		
-		
-		//Add these back in once I get inidividual rendering sorted out. 
-		/*
+		let renderedElements = [];
+
 		let allRunes = this.getBinded();
 		allRunes = allRunes.concat(this.renderSelected());
-		for (let rune of allRunes) {
-			let runeElements = rune.render();
-			for (let i = 0; i < runeElements.length; i++) { //Some render functions return multiple renderedElements, so go through all of them.
-				let tempElement = runeElements[i];
-				let order = devConfig.renderOrder[tempElement.type]; //Get the render order based on the current rune's type
-				if (renderedElements.length === 0) {
-					renderedElements.push(tempElement);
-				} else {
-					let inserted = false;
-					for (let j = 0; j < renderedElements.length; j++) {
-						let checkedElementOrder = devConfig.renderOrder[renderedElements[j].type];
-						if (order < checkedElementOrder) { //We've searched too far in the array and found people with higher rendering order.
-							renderedElements.splice(j, 0, tempElement); //Insert us at the end of our rendering section.
-							inserted = true;
-							break;
-						}
-					}
-					if (!inserted) { //We are on the top of the rendering queue.
-						renderedElements.push(tempElement);
-					}
-				}
-			}
+		for(let rune of allRunes){
+			renderedElements = renderedElements.concat(rune.render())
 		}
-		*/
-		for(let element of renderedElements){
-			this.stage.addChild(element.displayObj);
-		}
-		this.renderer.render(this.stage);
+		return renderedElements;
 	}
 }
