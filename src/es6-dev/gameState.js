@@ -302,6 +302,25 @@ export default class GameState {
 		for(let rune of allRunes){
 			renderedElements = renderedElements.concat(rune.render())
 		}
+		if(devConfig.showCollisionGrid){
+			const unit = devConfig.collisionGridUnitSize;
+			let navunit = new PIXI.Graphics();
+			for(let i = 0; i<this.size.x/unit; i++){
+				for(let j = 0; j<this.size.y/unit; j++){
+					let xRender = i*unit;
+					let yRender = j*unit;
+					if(!this.navMesh.isWalkableAt(i, j)){
+						navunit.beginFill(0xff0000, 0.5);
+					}
+					else{
+						navunit.beginFill(0x00ff00, 0.5);
+					}
+					navunit.drawRect(xRender, yRender, unit, unit);
+					navunit.endFill();
+				}
+			}
+			renderedElements.push(new RenderedElement(navunit, "NavmeshOverlay"))	
+		}
 		return renderedElements;
 	}
 }

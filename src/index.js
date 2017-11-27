@@ -12,11 +12,11 @@ let lastFrameTime = 0;
 
 window.onload = function() {
 	window.renderer = new Renderer("test");
-	b = new GameState({
+	window.gameState = new GameState({
 		"x": 720,
 		"y": 1000
 	});
-	c = new Canvas(b, ["circle", "attack"]);
+	c = new Canvas(["circle", "attack"]);
 	m = new Minimap({
 		"x": 0,
 		"y": 0
@@ -27,6 +27,8 @@ window.onload = function() {
 	renderer.setup(start);
 };
 function start(){
+	console.log("Textures loaded!");
+	$("#" + window.renderer.element).focus();
 	requestAnimationFrame(gameLoop);
 }
 function gameLoop(timeStamp) {
@@ -38,11 +40,12 @@ function gameLoop(timeStamp) {
 }
 
 function update(time) {
-	b.update(time);
+	window.gameState.update(time);
 }
 
 function render() {
-	renderer.addToRenderQueue(b.render());
+	renderer.addToRenderQueue(window.gameState.render());
+	renderer.addToRenderQueue(c.render());
 	renderer.render();
 }
 

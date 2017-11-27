@@ -14,13 +14,9 @@ export default class Chalkling extends Unit {
 		this.path = [];
 		this.topLeft = new Point(this.position.x - 50, this.position.y - 50);
 	}
-	getAnimation() { //Example path: ./chalklings/Testling/Animations/Idle/X
+	getAnimation() { //Example path: ./chalklings/Testling/Animations/Idle.png
 		let pathToAnimation = '';
 		switch (this.currentAction) {
-			/*
-			The reason for the frame+1 and parenthesis is because I can take a group of png files, selected them all, and then rename using f2/
-			If I put no name in, it names them (1), (2), etc.
-			 */
 			case "IDLE":
 				pathToAnimation = './chalklings/' + this.name + '/Animations/Idle.png';
 				break;
@@ -38,11 +34,8 @@ export default class Chalkling extends Unit {
 			case "FINISHER":
 				pathToAnimation = './chalklings/' + this.name + '/Animations/Finishers/' + this.target.name + '/' + this.frame + ".png";
 				break;
-			case "CRITICAL":
-				pathToAnimation = './chalklings/' + this.name + '/Animations/Critical/' + this.frame + ".png";
-				break;
 			default:
-				pathToAnimation = './chalklings/' + this.name + '/Animations/Idle/' + this.frame + ".png";
+				pathToAnimation = './chalklings/' + this.name + '/Animations/Idle.png';
 		}
 		return pathToAnimation;
 	};
@@ -178,10 +171,13 @@ export default class Chalkling extends Unit {
 		spriteGraphics.y = this.topLeft.y;
 		spriteGraphics.width = 100;
 		spriteGraphics.height = 100;
-		const healthBarOutside = '<rect x="' + (this.topLeft.x).toString() + '" y="' + (this.topLeft.y + 110).toString() + '" width="100" height="5" fill="green"/>';
 		const healthRatio = Math.max(0, (((this.attributes.maxHealth - this.attributes.health) / this.attributes.maxHealth) * 100));
-		const healthBarLeft = '<rect x="' + ((this.topLeft.x) + (100 - healthRatio)).toString() + '" y="' + (this.topLeft.y + 110).toString() + '" width="' + healthRatio.toString() + '" height="5" fill="red"/>';
-		const healthBarTotal = healthBarOutside + healthBarLeft;
-		return [new RenderedElement(spriteGraphics, "ChalklingImage")];
+		let healthBarOutside = new PIXI.Graphics();
+		healthBarOutside.beginFill(0x00ff00);
+		healthBarOutside.drawRect(this.topLeft.x, this.topLeft.y + 110, 100, 5);
+		let healthBarLeft = new PIXI.Graphics();
+		healthBarLeft.beginFill(0xff0000);
+		healthBarLeft.drawRect(this.topLeft.x + (100 - healthRatio), this.topLeft.y + 110, healthRatio, 5);
+		return [new RenderedElement(spriteGraphics, "ChalklingImage"), new RenderedElement(healthBarOutside, "ChalklingHealthTotal"), new RenderedElement(healthBarLeft, "ChalklingHealthRemaining")];
 	}
 }

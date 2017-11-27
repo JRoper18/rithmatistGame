@@ -12,6 +12,9 @@ export default class Renderer {
 		this.stage = new PIXI.Container();
 		PIXI.loader
 			.add("./chalklings/Testling/Animations/Idle.png")
+			.add("./chalklings/Testling/Animations/Dying.png")
+			.add("./chalklings/Testling/Animations/Attack.png")
+			.add("./chalklings/Testling/Animations/Walk.png")
 			.load(callback);
 	}
 	addToRenderQueue(graphicsArray){

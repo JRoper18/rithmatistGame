@@ -5,6 +5,10 @@ export default class SelectedOverlay {
 		this.position = position;
 	}
 	render() {
-		return [new RenderedElement("<rect x=\"" + (this.position.x - 5).toString() + "\" y= \"" + (this.position.y - 5).toString() + "\" width = \"110\" height=\"110\" style=\"fill:gold\"/>", "SelectedOutline")];
+		let selectedRect = new PIXI.Graphics();
+		selectedRect.beginFill(0xffd700)
+		selectedRect.drawRect(this.position.x - 5, this.position.y - 5, 110, 110);
+		selectedRect.endFill();
+		return [new RenderedElement(selectedRect, "SelectedOutline")];
 	}
 }

@@ -13,7 +13,7 @@ export default class Circle extends Unit {
 			"tags": [
 				"root"
 			]
-		} : {};
+		} : {"tags": []};
 		super("Circle", id, player, position, rootObj);
 		this.points = points;
 		this.hasBinded = [];

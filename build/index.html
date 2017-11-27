@@ -15,9 +15,11 @@
           "CirclePoints" : 1,
           "CircleTrue" : 0,
           "ChalklingImage" : 3,
-          "ChalklingHealth" : 4,
-          "Line": 5,
+          "ChalklingHealthTotal" : 4,
+          "ChalklingHealthRemaining": 5,
+          "Line": 6,
           "SelectedOutline" : 2,
+          "NavmeshOverlay": 9,
           "Rune" : 0,
           "PatternDefs" : 10
         },
@@ -28,11 +30,11 @@
         "collisionGridUnitSize": 10 //How many pixels a side of a unit of the collision grid takes up.
       }
     </script>
-    <div id = "test"></div>
+    <div oncontextmenu="return false;" id = "test" tabindex="0" style="width: 100vw; height: 100vh;"></div> <!--Tab index allows the div to be targetable so that firefox can read events from it. Not sure why, but it works. Yay for cross-browser support!-->
     <script src="./polyfill.min.js"></script>
     <script src="./pixi.min.js"></script>
     <script src="./pathfinding.min.js"></script>
-    <script src="./jquery-3.0.0.min.js"></script>
+    <script src="./jquery-3.2.1.js"></script>
     <script src="./bundle.js"></script>
   </body>
 </html>
