@@ -44,8 +44,7 @@ function update(time) {
 }
 
 function render() {
-	renderer.addToRenderQueue(window.gameState.render());
-	renderer.addToRenderQueue(c.render());
+	window.gameState.render();
 	renderer.render();
 }
 

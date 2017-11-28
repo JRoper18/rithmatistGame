@@ -3,6 +3,7 @@ export default class Renderer {
 		this.queue = [];
 		this.element = element;
 		this.stage;
+		this.indexLocations = {}; //Stores the first element of a particular z index
 		this.renderer;
 	}
 	setup(callback){
@@ -17,36 +18,43 @@ export default class Renderer {
 			.add("./chalklings/Testling/Animations/Walk.png")
 			.load(callback);
 	}
-	addToRenderQueue(graphicsArray){
-		this.queue = this.queue.concat(graphicsArray);
+	addToRenderQueue(graphicsContainer){
+		this.queue.push(graphicsContainer);
+	}
+	updateIndexLocations(insertedNum){
+		for(let index of Object.keys(this.indexLocations)){
+			if(index > insertedNum){
+				this.indexLocations[index]++;
+			}
+		}
 	}
 	render(){
-		if(this.stage.children.length != 0){
-			this.stage.removeChildren();
-		}
-		let elementOrderHashtable = {};
 		//Make a dictionary of the render order as the key and the elements with that order as the data. 
 		for (let renderedElement of this.queue) {
 			const num = devConfig.renderOrder[renderedElement.type];
-			if(elementOrderHashtable[num] === undefined){
-				elementOrderHashtable[num] = [renderedElement.displayObj]
+			if(this.indexLocations[num] === undefined){
+				let foundHigherIndex = false;
+				for(let index of Object.keys(this.indexLocations)){
+					if(index > num){
+						foundHigherIndex = true;
+						this.stage.addChildAt(renderedElement.displayObj, this.indexLocations[index] - 1)
+						this.indexLocations[num] = this.indexLocations[index - 1];
+						this.updateIndexLocations(num);
+						break;
+					}
+				}
+				if(!foundHigherIndex){
+					this.stage.addChild(renderedElement.displayObj);
+					this.indexLocations[num] = this.stage.children.length - 1;
+				}	
 			}
 			else{
-				elementOrderHashtable[num].push(renderedElement.displayObj)
-			}
-		}
-		const orderedKeys = Object.keys(elementOrderHashtable).sort(function(a, b){ 
-			return a-b
-		});
-		//"But you could use quick sort or merge sort!" I'm thinking that because the array is so small, it might not matter that I'm using this. 
-		//TODO: Test other sorting methods to see if there's a difference. 
-		for(let key of orderedKeys){
-			let displayLayer = elementOrderHashtable[key];
-			for(let displayObj of displayLayer){
-				this.stage.addChild(displayObj);
+				this.stage.addChildAt(renderedElement.displayObj, this.indexLocations[num]);
+				this.updateIndexLocations(num);
 			}
 		}
 		this.renderer.render(this.stage);
+		console.log(this.stage);
  		this.queue = [];
 	}
 }

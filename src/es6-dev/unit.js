@@ -6,6 +6,7 @@ export default class Unit {
 		this.position = position;
 		this.attributes = attributes;
 		this.attributes.health = this.attributes.maxHealth;
+		
 	}
 	hasTags(...tags) {
 		let tagsMatch = 0;

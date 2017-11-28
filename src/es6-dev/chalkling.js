@@ -155,29 +155,41 @@ export default class Chalkling extends Unit {
 
 	}
 	render() {
-		//The way we render only a section of the spritesheet is to embed it in another svg and set the viewbox.
-		//Other methods here: http://stackoverflow.com/questions/16983442/how-to-specify-the-portion-of-the-image-to-be-rendered-inside-svgimage-tag
-		if (this.currentAction == "DEATH") {
-			return [];
-		}
-		let texture = PIXI.loader.resources[this.getAnimation()].texture;
 		const totalWidth = this.attributes.animationData[this.currentAction].size.x;
 		const frameWidth = (totalWidth / this.attributes.animationData[this.currentAction].frames);
 		const frameHeight = this.attributes.animationData[this.currentAction].size.y;
 		let viewBox = new PIXI.Rectangle((frameWidth * this.frame), 0, frameWidth, frameHeight);
-		texture.frame = viewBox;
-		let spriteGraphics = new PIXI.Sprite(texture);
-		spriteGraphics.x = this.topLeft.x;
-		spriteGraphics.y = this.topLeft.y;
-		spriteGraphics.width = 100;
-		spriteGraphics.height = 100;
-		const healthRatio = Math.max(0, (((this.attributes.maxHealth - this.attributes.health) / this.attributes.maxHealth) * 100));
-		let healthBarOutside = new PIXI.Graphics();
-		healthBarOutside.beginFill(0x00ff00);
-		healthBarOutside.drawRect(this.topLeft.x, this.topLeft.y + 110, 100, 5);
-		let healthBarLeft = new PIXI.Graphics();
-		healthBarLeft.beginFill(0xff0000);
-		healthBarLeft.drawRect(this.topLeft.x + (100 - healthRatio), this.topLeft.y + 110, healthRatio, 5);
-		return [new RenderedElement(spriteGraphics, "ChalklingImage"), new RenderedElement(healthBarOutside, "ChalklingHealthTotal"), new RenderedElement(healthBarLeft, "ChalklingHealthRemaining")];
+		if(this.renderElement == undefined){
+			let container = new PIXI.Container();
+			let texture = PIXI.loader.resources[this.getAnimation()].texture;
+			texture.frame = viewBox;
+			let spriteGraphics = new PIXI.Sprite(texture);
+			spriteGraphics.x = this.topLeft.x;
+			spriteGraphics.y = this.topLeft.y;
+			spriteGraphics.width = 100;
+			spriteGraphics.height = 100;
+			let healthBar = new PIXI.Container();
+			const healthRatio = Math.max(0, (((this.attributes.maxHealth - this.attributes.health) / this.attributes.maxHealth) * 100));
+			let healthBarOutside = new PIXI.Graphics();
+			healthBarOutside.beginFill(0x00ff00);
+			healthBarOutside.drawRect(this.topLeft.x, this.topLeft.y + 110, 100, 5);
+			let healthBarLeft = new PIXI.Graphics();
+			healthBarLeft.beginFill(0xff0000);
+			healthBarLeft.drawRect(this.topLeft.x + (100 - healthRatio), this.topLeft.y + 110, healthRatio, 5);
+			healthBar.addChild(healthBarOutside, healthBarLeft);
+			container.addChild(spriteGraphics, healthBar);
+			this.renderElement = new RenderedElement(container, "ChalklingImage");
+			window.renderer.addToRenderQueue(this.renderElement)
+		}
+		else{
+			let sprite = this.renderElement.displayObj.getChildAt(0);
+			sprite.x = this.topLeft.x;
+			sprite.y = this.topLeft.y;
+			let healthBar = this.renderElement.displayObj.getChildAt(1);
+			healthBar.x = this.topLeft.x = this.topLeft.x;
+			healthBar.y = this.topLeft.y + 110;
+			sprite.frame = viewBox;
+		}
+		
 	}
 }

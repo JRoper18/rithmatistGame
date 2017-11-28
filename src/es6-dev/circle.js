@@ -220,12 +220,24 @@ export default class Circle extends Unit {
 	}
 	render() {
 		let radius = this.radius;
-		let r = radius.toString();
-		
 		let healthRatio = 1 - (this.attributes.health / this.attributes.maxHealth);
 		const swidth = devConfig.circleHealthStrokeWidth;
 		const deductRatio = 2 * Math.PI * (1 - (this.attributes.maxHealth / this.attributes.possibleHealth));
-		let realCircle = new Rune(this.points).render();
-		return [new RenderedElement(this.makeArcGraphic(0, deductRatio, 0xffffff), "CircleTrue"), new RenderedElement(this.makeArcGraphic(deductRatio, 6.28, 0xff0000), "CircleTrue"), new RenderedElement(this.makeArcGraphic(deductRatio + healthRatio * (6.28-deductRatio), 6.28, 0x00ff00), "CircleTrue"), realCircle[0]];
+		if(this.renderElement == undefined){
+			let obj = new PIXI.Container();
+			let radius = this.radius;
+			let healthRatio = 1 - (this.attributes.health / this.attributes.maxHealth);
+			const swidth = devConfig.circleHealthStrokeWidth;
+			const deductRatio = 2 * Math.PI * (1 - (this.attributes.maxHealth / this.attributes.possibleHealth));
+			let realCircle = new Rune(this.points).render();
+			obj.addChild(this.makeArcGraphic(0, deductRatio, 0xffffff), this.makeArcGraphic(deductRatio, 6.28, 0xff0000), this.makeArcGraphic(deductRatio + healthRatio * (6.28-deductRatio), 6.28, 0x00ff00), realCircle[0].displayObj);
+			this.renderElement = new RenderedElement(obj, "CircleTrue");
+			window.renderer.addToRenderQueue(this.renderElement);
+		}
+		else{
+			this.renderElement.displayObj.addChildAt(this.makeArcGraphic(deductRatio + healthRatio * (6.28-deductRatio), 6.28, 0x00ff00), 2); //Update health
+			this.renderElement.displayObj.removeChildAt(3);	
+		}
+		
 	}
 }

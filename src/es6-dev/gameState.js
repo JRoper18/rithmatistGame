@@ -295,13 +295,13 @@ export default class GameState {
 		});
 	}
 	render() {
-		let renderedElements = [];
 
 		let allRunes = this.getBinded();
 		allRunes = allRunes.concat(this.renderSelected());
 		for(let rune of allRunes){
-			renderedElements = renderedElements.concat(rune.render())
+			rune.render();
 		}
+		/*
 		if(devConfig.showCollisionGrid){
 			const unit = devConfig.collisionGridUnitSize;
 			let navunit = new PIXI.Graphics();
@@ -319,8 +319,8 @@ export default class GameState {
 					navunit.endFill();
 				}
 			}
-			renderedElements.push(new RenderedElement(navunit, "NavmeshOverlay"))	
+			window.renderer.addToRenderQueue(new RenderedElement(navunit, "NavmeshOverlay"))	
 		}
-		return renderedElements;
+		*/
 	}
 }
