@@ -118,10 +118,10 @@ export default class Canvas {
 		let path;
 		switch (this.mode) {
 			case "DRAW":
-				path = this.currentRune.render("FILL");
+				this.currentRune.render("FILL");
 				break;
 			case "COMMAND":
-				path = this.currentRune.render("DASH");
+				this.currentRune.render("DASH");
 				break;
 			case "SELECTION":
 				this.currentRune.render("FADE");

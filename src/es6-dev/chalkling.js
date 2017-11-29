@@ -200,7 +200,6 @@ export default class Chalkling extends Unit {
 			spriteTotal.y = this.topLeft.y;
 			let spriteImg = spriteTotal.getChildAt(1);
 			spriteImg.frame = viewBox;
-			const aniString = this.getAnimation();
 			let healthBarLeft = spriteTotal.getChildAt(2).getChildAt(1);
 			healthBarLeft.width = healthRatio;
 			healthBarLeft.x = 100 - healthRatio;
