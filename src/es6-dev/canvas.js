@@ -124,11 +124,10 @@ export default class Canvas {
 				path = this.currentRune.render("DASH");
 				break;
 			case "SELECTION":
-				path = this.currentRune.render("FADE");
+				this.currentRune.render("FADE");
 				break;
 			default:
-				path = this.currentRune.render();
+				this.currentRune.render();
 		}
-		return path;
 	}
 }

@@ -229,14 +229,15 @@ export default class Circle extends Unit {
 			let healthRatio = 1 - (this.attributes.health / this.attributes.maxHealth);
 			const swidth = devConfig.circleHealthStrokeWidth;
 			const deductRatio = 2 * Math.PI * (1 - (this.attributes.maxHealth / this.attributes.possibleHealth));
-			let realCircle = new Rune(this.points).render();
-			obj.addChild(this.makeArcGraphic(0, deductRatio, 0xffffff), this.makeArcGraphic(deductRatio, 6.28, 0xff0000), this.makeArcGraphic(deductRatio + healthRatio * (6.28-deductRatio), 6.28, 0x00ff00), realCircle[0].displayObj);
+			let realCircle = new Rune(this.points);
+			realCircle.render();
+			obj.addChild(this.makeArcGraphic(0, deductRatio, 0xffffff), this.makeArcGraphic(deductRatio, 6.28, 0xff0000), this.makeArcGraphic(deductRatio + healthRatio * (6.28-deductRatio), 6.28, 0x00ff00), realCircle.renderElement.displayObj);
 			this.renderElement = new RenderedElement(obj, "CircleTrue");
 			window.renderer.addToRenderQueue(this.renderElement);
 		}
 		else{
 			this.renderElement.displayObj.addChildAt(this.makeArcGraphic(deductRatio + healthRatio * (6.28-deductRatio), 6.28, 0x00ff00), 2); //Update health
-			this.renderElement.displayObj.removeChildAt(3);	
+			this.renderElement.displayObj.removeChildAt(3);	//Remove old health circle. 
 		}
 		
 	}

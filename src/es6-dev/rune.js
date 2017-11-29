@@ -11,7 +11,7 @@ export default class Rune { //A Rune is a non-animated (static) set of points
 		this.points = points;
 		this.id = id;
 	}
-	makePolygon(polyGraphics){
+	makePolygon(polyGraphics, dotted = false){
 		polyGraphics.moveTo(this.points[0].x, this.points[0].y);
 		for(let i = 1; i<this.points.length; i++){
 			const current = this.points[i]
@@ -19,29 +19,31 @@ export default class Rune { //A Rune is a non-animated (static) set of points
 		}
 	}
 	render(mode = "FILL") {
-		if(this.points.length == 0){
-			return [];
+		if(this.renderElement === undefined){
+			let graphics = new PIXI.Graphics();
+			switch (mode) {
+				case "FILL":
+					graphics.lineStyle(1, 0x000000, 1);
+					graphics.beginFill(0xffFF00, 0);
+					this.makePolygon(graphics);
+					graphics.endFill();
+				case "DASH":
+					graphics.lineStyle(1, 0x000000, 1);
+					graphics.beginFill(0xffFF00, 0);
+					this.makePolygon(graphics);
+					graphics.endFill();
+				case "FADE":
+					graphics.lineStyle(1, 0x808080, 1);
+					graphics.beginFill(0xffFF00, 0);
+					this.makePolygon(graphics);
+					graphics.endFill();	
+			}
+			graphics.x = 0;
+			graphics.y = 0;
+			this.renderElement = new RenderedElement(graphics, "Rune");
 		}
-		let graphics = new PIXI.Graphics();
-		switch (mode) {
-			case "FILL":
-				graphics.lineStyle(1, 0x000000, 1);
-				graphics.beginFill(0xffFF00, 0);
-				this.makePolygon(graphics);
-				graphics.endFill();
-			case "DASH":
-				graphics.lineStyle(1, 0x000000, 1);
-				graphics.beginFill(0xffFF00, 0);
-				this.makePolygon(graphics);
-				graphics.endFill();
-			case "FADE":
-				graphics.lineStyle(1, 0x808080, 1);
-				graphics.beginFill(0xffFF00, 0);
-				this.makePolygon(graphics);
-				graphics.endFill();	
+		else{
+
 		}
-		graphics.x = 0;
-		graphics.y = 0;
-		return [new RenderedElement(graphics, "Rune")];
 	}
 }

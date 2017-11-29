@@ -248,7 +248,7 @@ export default class GameState {
 				}
 			}
 		});
-		this.selected = [chalkling];
+		this.changeSelected([chalkling]);
 	}
 	selectChalklingsInRect(point1, point2) {
 		let V = SAT.Vector;
@@ -266,18 +266,21 @@ export default class GameState {
 				}
 			}
 		});
-		this.selected = selected;
+		this.changeSelected(selected);
 	}
 	isChalkling(rune) {
 		return (rune.__proto__ instanceof Chalkling)
 	}
-	renderSelected() {
-		let selectedArray = [];
-		for (let i = 0; i < this.selected.length; i++) {
-			let currentRunePosition = this.selected[i].topLeft;
-			selectedArray.push(new SelectedOverlay(currentRunePosition));
+	changeSelected(newSelected){
+		for(let oldSelected of this.selected){
+			oldSelected.selected = false;
 		}
-		return selectedArray;
+		this.selected = newSelected;
+	}
+	updateSelected() {
+		for (let i = 0; i < this.selected.length; i++) {
+			this.selected[i].selected = true;
+		}
 	}
 	updateChalklingPaths(){
 
@@ -288,6 +291,7 @@ export default class GameState {
 		this.updateChalklingView();
 		this.removeDeadBindedRunes("Circle");
 		this.removeDeadBindedRunes("Line");
+		this.updateSelected();
 		this.getBinded((rune) => {
 			if (typeof rune.update != "undefined") {
 				rune.update(time);
@@ -297,7 +301,6 @@ export default class GameState {
 	render() {
 
 		let allRunes = this.getBinded();
-		allRunes = allRunes.concat(this.renderSelected());
 		for(let rune of allRunes){
 			rune.render();
 		}

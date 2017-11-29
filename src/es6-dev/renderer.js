@@ -54,7 +54,6 @@ export default class Renderer {
 			}
 		}
 		this.renderer.render(this.stage);
-		console.log(this.stage);
  		this.queue = [];
 	}
 }

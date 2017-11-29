@@ -13,6 +13,7 @@ export default class Chalkling extends Unit {
 		this.target = null;
 		this.path = [];
 		this.topLeft = new Point(this.position.x - 50, this.position.y - 50);
+		this.selected = false;
 	}
 	getAnimation() { //Example path: ./chalklings/Testling/Animations/Idle.png
 		let pathToAnimation = '';
@@ -158,37 +159,51 @@ export default class Chalkling extends Unit {
 		const totalWidth = this.attributes.animationData[this.currentAction].size.x;
 		const frameWidth = (totalWidth / this.attributes.animationData[this.currentAction].frames);
 		const frameHeight = this.attributes.animationData[this.currentAction].size.y;
+		const healthRatio = Math.max(0, (((this.attributes.maxHealth - this.attributes.health) / this.attributes.maxHealth) * 100));
 		let viewBox = new PIXI.Rectangle((frameWidth * this.frame), 0, frameWidth, frameHeight);
 		if(this.renderElement == undefined){
 			let container = new PIXI.Container();
+			container.x = this.topLeft.x;
+			container.y = this.topLeft.y;
 			let texture = PIXI.loader.resources[this.getAnimation()].texture;
 			texture.frame = viewBox;
+			let selectedOutline = new PIXI.Graphics();
+			selectedOutline.beginFill(0xffd700);
+			selectedOutline.drawRect(-5, -5, 110, 110);
+			selectedOutline.endFill();
 			let spriteGraphics = new PIXI.Sprite(texture);
-			spriteGraphics.x = this.topLeft.x;
-			spriteGraphics.y = this.topLeft.y;
+			spriteGraphics.x = 0;
+			spriteGraphics.y = 0
 			spriteGraphics.width = 100;
 			spriteGraphics.height = 100;
 			let healthBar = new PIXI.Container();
-			const healthRatio = Math.max(0, (((this.attributes.maxHealth - this.attributes.health) / this.attributes.maxHealth) * 100));
 			let healthBarOutside = new PIXI.Graphics();
 			healthBarOutside.beginFill(0x00ff00);
-			healthBarOutside.drawRect(this.topLeft.x, this.topLeft.y + 110, 100, 5);
+			healthBarOutside.drawRect(0, 110, 100, 5);
 			let healthBarLeft = new PIXI.Graphics();
 			healthBarLeft.beginFill(0xff0000);
-			healthBarLeft.drawRect(this.topLeft.x + (100 - healthRatio), this.topLeft.y + 110, healthRatio, 5);
+			healthBarLeft.drawRect((100 - healthRatio), 110, healthRatio, 5);
 			healthBar.addChild(healthBarOutside, healthBarLeft);
-			container.addChild(spriteGraphics, healthBar);
+			container.addChild(selectedOutline, spriteGraphics, healthBar); //The objects rendered, in order are: (1) The selected outline, (2) the image, (3) the heatlh bar
 			this.renderElement = new RenderedElement(container, "ChalklingImage");
 			window.renderer.addToRenderQueue(this.renderElement)
 		}
 		else{
-			let sprite = this.renderElement.displayObj.getChildAt(0);
-			sprite.x = this.topLeft.x;
-			sprite.y = this.topLeft.y;
-			let healthBar = this.renderElement.displayObj.getChildAt(1);
-			healthBar.x = this.topLeft.x = this.topLeft.x;
-			healthBar.y = this.topLeft.y + 110;
-			sprite.frame = viewBox;
+			let spriteTotal = this.renderElement.displayObj;
+			if(this.selected){
+				spriteTotal.getChildAt(0).visible = true;
+			}
+			else{
+				spriteTotal.getChildAt(0).visible = false;
+			}
+			spriteTotal.x = this.topLeft.x;
+			spriteTotal.y = this.topLeft.y;
+			let spriteImg = spriteTotal.getChildAt(1);
+			spriteImg.frame = viewBox;
+			const aniString = this.getAnimation();
+			let healthBarLeft = spriteTotal.getChildAt(2).getChildAt(1);
+			healthBarLeft.width = healthRatio;
+			healthBarLeft.x = 100 - healthRatio;
 		}
 		
 	}
